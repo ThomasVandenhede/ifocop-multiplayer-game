@@ -1,3 +1,5 @@
+import AABB from "./aabb.js";
+
 export default class Renderer {
   constructor(game) {
     this.game = game;
@@ -14,36 +16,86 @@ export default class Renderer {
         for (let index = this.positions.length - 1; index >= 0; index--) {
           const self = this.positions;
           const position = self[index];
-          ctx.beginPath();
-          ctx.arc(
-            camera.applyToX(position.x + this.radius),
-            camera.applyToY(position.y + this.radius),
-            this.radius * camera.zoomLevel,
-            0,
-            Math.PI * 2
-          );
-          ctx.fill();
-          ctx.stroke();
+          const boundingRect = new AABB({
+            x: position.x,
+            y: position.y,
+            width: this.radius,
+            height: this.radius
+          });
+
+          // rendering body part only if it's visible in viewport
+          if (boundingRect.overlaps(camera)) {
+            // ctx.beginPath();
+            // ctx.arc(
+            //   camera.applyToX(position.x + this.radius),
+            //   camera.applyToY(position.y + this.radius),
+            //   camera.applyToDistance(this.radius),
+            //   0,
+            //   Math.PI * 2
+            // );
+            // ctx.fill();
+            // ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(
+              camera.applyToX(position.x + this.radius),
+              camera.applyToY(position.y + this.radius),
+              3,
+              0,
+              Math.PI * 2
+            );
+            ctx.fill();
+          }
         }
         ctx.restore();
       },
 
       GameArea: function(ctx, camera) {
         ctx.save();
-        ctx.strokeStyle = "red";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-        ctx.lineWidth = 10;
+        let minX =
+          camera.x -
+          (camera.x % window.background.width) -
+          window.background.width;
+        let minY =
+          camera.y -
+          (camera.y % window.background.height) -
+          window.background.height;
+
+        for (let x = minX; x < 1200; x += window.background.width) {
+          for (let y = minY; y < 1200; y += window.background.height) {
+            ctx.drawImage(
+              window.background,
+              camera.applyToX(x),
+              camera.applyToY(y),
+              camera.applyToDistance(window.background.width),
+              camera.applyToDistance(window.background.height)
+            );
+          }
+        }
+        ctx.globalCompositeOperation = "destination-in";
         ctx.beginPath();
         ctx.arc(
           camera.applyToX(this.x),
           camera.applyToY(this.y),
-          this.r * camera.zoomLevel,
+          camera.applyToDistance(this.r),
           0,
           Math.PI * 2
         );
         ctx.fill();
-        ctx.stroke();
         ctx.restore();
+
+        ctx.save();
+        ctx.strokeStyle = "#7E0000";
+        ctx.lineWidth = camera.applyToDistance(10);
+        ctx.beginPath();
+        ctx.arc(
+          camera.applyToX(this.x),
+          camera.applyToY(this.y),
+          camera.applyToDistance(this.r),
+          0,
+          Math.PI * 2
+        );
+        ctx.stroke();
       }
     };
 

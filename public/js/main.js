@@ -18,5 +18,5 @@ document.addEventListener("DOMContentLoaded", function() {
   fitCanvasToContainer();
 
   const game = new Game(socket);
-  game.main();
+  game.start();
 });

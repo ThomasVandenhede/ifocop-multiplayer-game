@@ -7,7 +7,8 @@ export default class KeyboardManager {
       ArrowLeft: "LEFT",
       ArrowRight: "RIGHT",
       ArrowDown: "DOWN",
-      Enter: "ENTER"
+      Enter: "ENTER",
+      Space: "SPACE"
     };
 
     this.keys = {

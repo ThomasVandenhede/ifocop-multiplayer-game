@@ -33,20 +33,22 @@ class Game {
       socket.on("inputState", ({ keys }) => {
         const player = this.players.find(player => player.id === socket.id);
         // update player's positiond
-        if (keys.UP) {
+        if (keys.UP || keys.SPACE) {
           player.speed = 400;
         }
-        if (!keys.UP) {
+        if (!keys.UP && !keys.SPACE) {
           player.speed = 180;
         }
         // if (keys.DOWN) {
         //   player.positions[0].y = player.positions[0].y + 7;
         // }
         if (keys.LEFT) {
-          player.direction -= Math.PI / 64;
+          player.direction -=
+            Math.PI / 64 / (player.radius / Player.PLAYER_INITIAL_RADIUS);
         }
         if (keys.RIGHT) {
-          player.direction += Math.PI / 64;
+          player.direction +=
+            Math.PI / 64 / (player.radius / Player.PLAYER_INITIAL_RADIUS);
         }
         if (keys.A) {
           player.radius = Math.min(player.radius + 2, 200);

@@ -1,22 +1,33 @@
-const randomColor = require("./randomize.js");
+const randomize = require("./randomize.js");
 const Vector = require("./vector").Vector;
-
-const PLAYER_INITIAL_RADIUS = 20;
 
 class Player {
   constructor(id, x = 0, y = 0) {
     this.id = id;
     this.type = this.constructor.name;
-    this.color = randomColor();
+    this.color = randomize.hsl();
 
     this.positions = [...Array(50)].map(() => new Vector(x, y));
-    this.width = PLAYER_INITIAL_RADIUS;
-    this.height = PLAYER_INITIAL_RADIUS;
-    this.radius = PLAYER_INITIAL_RADIUS;
+    this.width = Player.PLAYER_INITIAL_RADIUS;
+    this.height = Player.PLAYER_INITIAL_RADIUS;
+    this.radius = Player.PLAYER_INITIAL_RADIUS;
 
     this.speed = 200;
     this.direction = 0;
   }
+
+  static get PLAYER_INITIAL_RADIUS() {
+    return 20;
+  }
+
+  // update(dt) {
+  // const distance = this.speed * dt;
+  // const dx = distance * Math.cos(this.direction);
+  // const dy = distance * Math.sin(this.direction);
+  //
+  // this.positions[0].x += dx;
+  // this.positions[0].y += dy;
+  // }
 
   update(dt) {
     this.positions.forEach((position, index, self) => {
