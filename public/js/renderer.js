@@ -13,12 +13,12 @@ export default class Renderer {
         ctx.save();
         ctx.fillStyle = this.color;
         ctx.lineWidth = camera.applyToDistance(5);
-        for (let index = this.positions.length - 1; index >= 0; index--) {
-          const self = this.positions;
+        for (let index = this.segments.length - 1; index >= 0; index--) {
+          const self = this.segments;
           const position = self[index];
           const boundingRect = new AABB({
-            x: position.x,
-            y: position.y,
+            x: position.x - this.radius / 2,
+            y: position.y - this.radius / 2,
             width: this.radius,
             height: this.radius
           });
@@ -33,18 +33,6 @@ export default class Renderer {
               0,
               Math.PI * 2
             );
-            ctx.fill();
-
-            // ctx.beginPath();
-            // ctx.arc(
-            //   camera.applyToX(position.x + this.radius),
-            //   camera.applyToY(position.y + this.radius),
-            //   // position.x + this.radius,
-            //   // position.y + this.radius,
-            //   3,
-            //   0,
-            //   Math.PI * 2
-            // );
             ctx.fill();
             ctx.stroke();
           }

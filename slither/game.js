@@ -34,21 +34,19 @@ class Game {
         const player = this.players.find(player => player.id === socket.id);
         // update player's positiond
         if (keys.UP || keys.SPACE) {
-          player.speed = 400;
+          player.isBoosting = true;
         }
         if (!keys.UP && !keys.SPACE) {
-          player.speed = 180;
+          player.isBoosting = false;
         }
         // if (keys.DOWN) {
-        //   player.positions[0].y = player.positions[0].y + 7;
+        //   player.segments[0].y = player.segments[0].y + 7;
         // }
         if (keys.LEFT) {
-          player.direction -=
-            Math.PI / 64 / (player.radius / Player.PLAYER_INITIAL_RADIUS);
+          player.dir += 3 / (player.radius / Player.PLAYER_INITIAL_RADIUS);
         }
         if (keys.RIGHT) {
-          player.direction +=
-            Math.PI / 64 / (player.radius / Player.PLAYER_INITIAL_RADIUS);
+          player.dir -= 3 / (player.radius / Player.PLAYER_INITIAL_RADIUS);
         }
         if (keys.A) {
           player.radius = Math.min(player.radius + 2, 200);

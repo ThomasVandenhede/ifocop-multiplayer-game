@@ -64,8 +64,7 @@ export default class Game {
     this.socket.emit("inputState", { keys: this.km.keys });
     this.camera.update();
     if (this.player) {
-      const head = this.player.positions[0];
-      this.camera.center(head.x, head.y);
+      this.camera.center(this.player.segments[0].x, this.player.segments[0].y);
     }
   }
 

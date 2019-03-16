@@ -1,64 +1,50 @@
 const randomize = require("./randomize.js");
 const Vector = require("./vector").Vector;
+const utils = require("./utils");
 
 class Player {
   constructor(id, x = 0, y = 0) {
     this.id = id;
     this.type = this.constructor.name;
     this.color = randomize.hsl();
+    this.isBoosting = false;
 
-    this.positions = [...Array(1)].map(() => new Vector(x, y));
+    this.segments = [...Array(50)].map(() => new Vector(x, y));
     this.width = Player.PLAYER_INITIAL_RADIUS;
     this.height = Player.PLAYER_INITIAL_RADIUS;
     this.radius = Player.PLAYER_INITIAL_RADIUS;
 
-    this.speed = 200;
-    this.direction = 0;
+    this.speed = 5;
+    this.dir = 0;
   }
 
   static get PLAYER_INITIAL_RADIUS() {
-    return 20;
+    return 30;
   }
 
-  // update(dt) {
-  // const distance = this.speed * dt;
-  // const dx = distance * Math.cos(this.direction);
-  // const dy = distance * Math.sin(this.direction);
-  //
-  // this.positions[0].x += dx;
-  // this.positions[0].y += dy;
-  // }
-
   update(dt) {
-    this.positions.forEach((position, index, self) => {
-      const distance = this.speed * dt;
+    this.speed = this.isBoosting ? 10 : 5;
 
-      if (index === 0) {
-        // move head
-        const dx = distance * Math.cos(this.direction);
-        const dy = distance * Math.sin(this.direction);
+    // move head
+    this.segments[0].x =
+      Math.sin(utils.degreeToRad(this.dir)) * this.speed + this.segments[0].x;
+    this.segments[0].y =
+      Math.cos(utils.degreeToRad(this.dir)) * this.speed + this.segments[0].y;
 
-        self[index].x += dx;
-        self[index].y += dy;
+    // move body
+    for (let i = 1; i < this.segments.length; i++) {
+      if (this.isBoosting) {
+        this.segments[i].x =
+          this.segments[i - 1].x * 0.3 + this.segments[i].x * 0.7;
+        this.segments[i].y =
+          this.segments[i - 1].y * 0.3 + this.segments[i].y * 0.7;
       } else {
-        // move the rest of the body
-        const joint = Vector.subtract(self[index - 1], self[index]);
-        const maxJointLength = this.radius * 0.9;
-
-        if (joint.norm > maxJointLength) {
-          if (joint.norm <= distance) {
-            self[index] = { ...self[index - 1] };
-          } else {
-            self[index] = Vector.sum(
-              self[index],
-              Vector.subtract(self[index - 1], self[index])
-                .getUnitVector()
-                .multiplyByScalar(distance)
-            );
-          }
-        }
+        this.segments[i].x =
+          this.segments[i - 1].x * 0.2 + this.segments[i].x * 0.8;
+        this.segments[i].y =
+          this.segments[i - 1].y * 0.2 + this.segments[i].y * 0.8;
       }
-    });
+    }
   }
 }
 
