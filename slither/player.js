@@ -7,7 +7,7 @@ class Player {
     this.type = this.constructor.name;
     this.color = randomize.hsl();
 
-    this.positions = [...Array(50)].map(() => new Vector(x, y));
+    this.positions = [...Array(1)].map(() => new Vector(x, y));
     this.width = Player.PLAYER_INITIAL_RADIUS;
     this.height = Player.PLAYER_INITIAL_RADIUS;
     this.radius = Player.PLAYER_INITIAL_RADIUS;

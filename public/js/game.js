@@ -64,8 +64,6 @@ export default class Game {
     this.socket.emit("inputState", { keys: this.km.keys });
     this.camera.update();
     if (this.player) {
-      this.camera.zoomLevel = 20 / this.player.radius;
-      // this.camera.zoomLevel = 50 / this.player.radius;
       const head = this.player.positions[0];
       this.camera.center(head.x, head.y);
     }
@@ -79,8 +77,10 @@ export default class Game {
   }
 
   start() {
+    window.gbg = new Image();
+    window.gbg.src = "/images/gbg.jpg";
     window.background = new Image();
-    window.background.src = "/images/backgroundx4.png";
+    window.background.src = "/images/bg54.jpg";
     window.background.onload = function() {
       this.main();
     }.bind(this);

@@ -12,7 +12,7 @@ export default class Renderer {
       Player: function(ctx, camera) {
         ctx.save();
         ctx.fillStyle = this.color;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = camera.applyToDistance(5);
         for (let index = this.positions.length - 1; index >= 0; index--) {
           const self = this.positions;
           const position = self[index];
@@ -25,26 +25,28 @@ export default class Renderer {
 
           // rendering body part only if it's visible in viewport
           if (boundingRect.overlaps(camera)) {
-            // ctx.beginPath();
-            // ctx.arc(
-            //   camera.applyToX(position.x + this.radius),
-            //   camera.applyToY(position.y + this.radius),
-            //   camera.applyToDistance(this.radius),
-            //   0,
-            //   Math.PI * 2
-            // );
-            // ctx.fill();
-            // ctx.stroke();
-
             ctx.beginPath();
             ctx.arc(
-              camera.applyToX(position.x + this.radius),
-              camera.applyToY(position.y + this.radius),
-              3,
+              camera.applyToX(position.x),
+              camera.applyToY(position.y),
+              camera.applyToDistance(this.radius),
               0,
               Math.PI * 2
             );
             ctx.fill();
+
+            // ctx.beginPath();
+            // ctx.arc(
+            //   camera.applyToX(position.x + this.radius),
+            //   camera.applyToY(position.y + this.radius),
+            //   // position.x + this.radius,
+            //   // position.y + this.radius,
+            //   3,
+            //   0,
+            //   Math.PI * 2
+            // );
+            ctx.fill();
+            ctx.stroke();
           }
         }
         ctx.restore();
@@ -61,8 +63,8 @@ export default class Renderer {
           (camera.y % window.background.height) -
           window.background.height;
 
-        for (let x = minX; x < 1200; x += window.background.width) {
-          for (let y = minY; y < 1200; y += window.background.height) {
+        for (let x = minX; x < camera.right; x += window.background.width) {
+          for (let y = minY; y < camera.bottom; y += window.background.height) {
             ctx.drawImage(
               window.background,
               camera.applyToX(x),

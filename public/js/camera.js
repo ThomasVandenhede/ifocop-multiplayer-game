@@ -9,7 +9,7 @@ var AXIS = {
 };
 
 export default class Camera extends AABB {
-  constructor({ zoomLevel = 1, canvas, x, y }) {
+  constructor({ zoomLevel = 1.15, canvas, x, y }) {
     super({
       x,
       y,
