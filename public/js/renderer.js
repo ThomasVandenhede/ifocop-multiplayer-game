@@ -11,8 +11,21 @@ export default class Renderer {
     const methods = {
       Player: function(ctx, camera) {
         ctx.save();
-        ctx.fillStyle = this.color;
-        ctx.lineWidth = camera.applyToDistance(5);
+        var canvas = document.getElementById("canvas");
+        var m_canvas = document.createElement("canvas");
+        var m_context = m_canvas.getContext("2d");
+        var snake_bodypart_canvas = document.createElement("canvas");
+        var snake_bodypart_canvas_context = snake_bodypart_canvas.getContext(
+          "2d"
+        );
+
+        snake_bodypart_canvas.width = window.snake.width;
+        snake_bodypart_canvas.height = window.snake.height;
+        snake_bodypart_canvas_context.drawImage(window.snake, 0, 0);
+
+        m_canvas.width = canvas.width;
+        m_canvas.height = canvas.height;
+
         for (let index = this.segments.length - 1; index >= 0; index--) {
           const self = this.segments;
           const position = self[index];
@@ -25,40 +38,42 @@ export default class Renderer {
 
           // rendering body part only if it's visible in viewport
           if (boundingRect.overlaps(camera)) {
-            ctx.beginPath();
-            ctx.arc(
-              camera.applyToX(position.x),
-              camera.applyToY(position.y),
-              camera.applyToDistance(this.radius),
+            m_context.drawImage(
+              snake_bodypart_canvas,
+              (index % 10) * window.snake.height,
               0,
-              Math.PI * 2
+              window.snake.height,
+              window.snake.height,
+              camera.applyToX(position.x - this.radius),
+              camera.applyToY(position.y - this.radius),
+              camera.applyToDistance(this.radius * 2),
+              camera.applyToDistance(this.radius * 2)
             );
-            ctx.fill();
-            ctx.stroke();
           }
         }
+        ctx.drawImage(m_canvas, 0, 0);
         ctx.restore();
       },
 
       GameArea: function(ctx, camera) {
         ctx.save();
-        let minX =
-          camera.x -
-          (camera.x % window.background.width) -
-          window.background.width;
-        let minY =
-          camera.y -
-          (camera.y % window.background.height) -
-          window.background.height;
+        const {
+          width: backgroundWidth,
+          height: backgroundHeight
+        } = window.background;
 
-        for (let x = minX; x < camera.right; x += window.background.width) {
-          for (let y = minY; y < camera.bottom; y += window.background.height) {
+        // actual rendering
+        let minX = camera.x - (camera.x % backgroundWidth) - backgroundWidth;
+        let minY = camera.y - (camera.y % backgroundHeight) - backgroundHeight;
+
+        for (let x = minX; x < camera.right; x += backgroundWidth) {
+          for (let y = minY; y < camera.bottom; y += backgroundHeight) {
             ctx.drawImage(
-              window.background,
+              window.m_canvas,
               camera.applyToX(x),
               camera.applyToY(y),
-              camera.applyToDistance(window.background.width),
-              camera.applyToDistance(window.background.height)
+              camera.applyToDistance(backgroundWidth),
+              camera.applyToDistance(backgroundHeight)
             );
           }
         }
@@ -98,6 +113,19 @@ export default class Renderer {
   }
 
   render() {
+    // pre-rendering
+    window.m_canvas = document.createElement("canvas");
+    window.m_canvas.width = window.background.width;
+    window.m_canvas.height = window.background.height;
+    var m_context = window.m_canvas.getContext("2d");
+    m_context.drawImage(
+      window.background,
+      0,
+      0,
+      window.background.width,
+      window.background.height
+    );
+
     this.clearCanvas();
     this.game.gameArea.render(this.ctx, this.game.camera);
     this.game.gameObjects.forEach(gameObject => {

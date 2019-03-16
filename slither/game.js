@@ -30,8 +30,9 @@ class Game {
       // notify all clients about the new connection
       this.io.emit("clientConnection", this.gameObjects);
 
-      socket.on("inputState", ({ keys }) => {
+      socket.on("clientUpdate", ({ inputState: { keys } }) => {
         const player = this.players.find(player => player.id === socket.id);
+
         // update player's positiond
         if (keys.UP || keys.SPACE) {
           player.isBoosting = true;
@@ -39,28 +40,12 @@ class Game {
         if (!keys.UP && !keys.SPACE) {
           player.isBoosting = false;
         }
-        // if (keys.DOWN) {
-        //   player.segments[0].y = player.segments[0].y + 7;
-        // }
         if (keys.LEFT) {
           player.dir += 3 / (player.radius / Player.PLAYER_INITIAL_RADIUS);
         }
         if (keys.RIGHT) {
           player.dir -= 3 / (player.radius / Player.PLAYER_INITIAL_RADIUS);
         }
-        if (keys.A) {
-          player.radius = Math.min(player.radius + 2, 200);
-        }
-        if (keys.Z) {
-          player.radius = Math.max(10, player.radius - 2);
-        }
-
-        // notify client about new game state
-        const gameState = {
-          players: this.players
-        };
-
-        this.io.emit("update", gameState);
       });
 
       socket.on("disconnect", () => {
@@ -84,6 +69,12 @@ class Game {
     this.players.forEach(player => {
       player.update(dt);
     });
+
+    // notify client about new game state
+    const gameState = {
+      players: this.players
+    };
+    this.io.emit("update", gameState);
   }
 
   gameLoop() {

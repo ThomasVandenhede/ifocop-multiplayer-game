@@ -46,6 +46,9 @@ export default class Game {
       this.player = this.gameObjects.find(player => {
         return player.id === this.socket.id;
       });
+
+      this.update();
+      this.render();
     });
   }
 
@@ -61,10 +64,14 @@ export default class Game {
    * Update viewport (camera) and send input to server.
    */
   update() {
-    this.socket.emit("inputState", { keys: this.km.keys });
     this.camera.update();
+
     if (this.player) {
       this.camera.center(this.player.segments[0].x, this.player.segments[0].y);
+      this.socket.emit("clientUpdate", {
+        inputState: { keys: this.km.keys },
+        player: this.player
+      });
     }
   }
 
@@ -76,8 +83,8 @@ export default class Game {
   }
 
   start() {
-    window.gbg = new Image();
-    window.gbg.src = "/images/gbg.jpg";
+    window.snake = new Image();
+    window.snake.src = "/images/snake-body.png";
     window.background = new Image();
     window.background.src = "/images/bg54.jpg";
     window.background.onload = function() {
@@ -92,7 +99,5 @@ export default class Game {
     // notify server about input devices
     this.update();
     this.render();
-
-    requestAnimationFrame(this.main.bind(this));
   }
 }

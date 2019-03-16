@@ -9,7 +9,7 @@ class Player {
     this.color = randomize.hsl();
     this.isBoosting = false;
 
-    this.segments = [...Array(50)].map(() => new Vector(x, y));
+    this.segments = [...Array(60)].map(() => new Vector(x, y));
     this.width = Player.PLAYER_INITIAL_RADIUS;
     this.height = Player.PLAYER_INITIAL_RADIUS;
     this.radius = Player.PLAYER_INITIAL_RADIUS;
@@ -34,15 +34,27 @@ class Player {
     // move body
     for (let i = 1; i < this.segments.length; i++) {
       if (this.isBoosting) {
-        this.segments[i].x =
-          this.segments[i - 1].x * 0.3 + this.segments[i].x * 0.7;
-        this.segments[i].y =
-          this.segments[i - 1].y * 0.3 + this.segments[i].y * 0.7;
+        this.segments[i].x = utils.lerp(
+          this.segments[i - 1].x,
+          this.segments[i].x,
+          0.7
+        );
+        this.segments[i].y = utils.lerp(
+          this.segments[i - 1].y,
+          this.segments[i].y,
+          0.7
+        );
       } else {
-        this.segments[i].x =
-          this.segments[i - 1].x * 0.2 + this.segments[i].x * 0.8;
-        this.segments[i].y =
-          this.segments[i - 1].y * 0.2 + this.segments[i].y * 0.8;
+        this.segments[i].x = utils.lerp(
+          this.segments[i - 1].x,
+          this.segments[i].x,
+          0.8
+        );
+        this.segments[i].y = utils.lerp(
+          this.segments[i - 1].y,
+          this.segments[i].y,
+          0.8
+        );
       }
     }
   }
