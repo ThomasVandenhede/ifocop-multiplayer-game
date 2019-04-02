@@ -48,6 +48,15 @@ class Snake {
     this.isDead = true;
   }
 
+  eatFood(dot, index) {
+    this.game.dots = [
+      ...this.game.dots.slice(0, index),
+      ...this.game.dots.slice(index + 1)
+    ];
+    // collision
+    this.radius += 0.05;
+  }
+
   dropFood() {
     console.log("DROP FOOD");
   }
@@ -104,17 +113,32 @@ class Snake {
       }
     }
 
-    // test collision with other snakes
+    // test head collision with dots
+    for (let index = 0; index < this.game.dots.length; ) {
+      const dot = this.game.dots[index];
+      const head = new Circle(this.head.x, this.head.y, this.radius);
+      if (
+        Math.pow(dot.x - head.x, 2) + Math.pow(dot.y - head.y, 2) <
+        Math.pow(head.r + dot.r, 2)
+      ) {
+        this.eatFood(dot, index);
+      } else {
+        index++;
+      }
+    }
+
+    // test forehead collision with other snakes
     const collidingSegments = allSegments.find(segment =>
       segment.containsPoint(this.forehead.x, this.forehead.y)
     );
-    // test collision with world boundaries
+    // test forehead collision with world boundaries
     const outsideWorldBounds = !this.game.world.containsPoint(
       this.forehead.x,
       this.forehead.y
     );
 
     if (collidingSegments || outsideWorldBounds) {
+      console.log("DEAD");
       this.die();
       this.dropFood();
       return;
