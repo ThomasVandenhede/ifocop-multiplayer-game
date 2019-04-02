@@ -9,7 +9,7 @@ export default class Renderer {
 
   register(gameObject) {
     const methods = {
-      Player: function(ctx, camera) {
+      Snake: function(ctx, camera) {
         ctx.save();
         var canvas = document.getElementById("canvas");
         var m_canvas = document.createElement("canvas");
@@ -101,6 +101,7 @@ export default class Renderer {
           Math.PI * 2
         );
         ctx.stroke();
+        ctx.restore();
       }
     };
 
@@ -128,8 +129,8 @@ export default class Renderer {
 
     this.clearCanvas();
     this.game.gameArea.render(this.ctx, this.game.camera);
-    this.game.gameObjects.forEach(gameObject => {
-      gameObject.render(this.ctx, this.game.camera);
+    this.game.snakes.forEach(snake => {
+      snake.render(this.ctx, this.game.camera);
     });
   }
 }

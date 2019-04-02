@@ -4,8 +4,6 @@ import Renderer from "./renderer.js";
 
 export default class Game {
   constructor(socket) {
-    this.player = null;
-
     // canvas
     this.canvas = document.getElementById("canvas");
 
@@ -13,7 +11,8 @@ export default class Game {
     this.renderer = new Renderer(this);
 
     // game objects
-    this.gameObjects = [];
+    this.dots = [];
+    this.snakes = [];
     this.gameArea = {
       type: "GameArea",
       x: 0,
@@ -23,7 +22,7 @@ export default class Game {
     this.renderer.register(this.gameArea);
 
     // input management
-    this.km = new KeyboardManager();
+    this.keyboardInput = new KeyboardManager();
 
     // camera
     this.camera = new Camera({ canvas: this.canvas });
@@ -31,32 +30,32 @@ export default class Game {
     // socket
     this.socket = socket;
 
-    this.socket.on("clientConnection", gameObjects => {
-      this.updateScene(gameObjects);
-
-      this.player = this.gameObjects.find(gameObject => {
-        return gameObject.id === this.socket.id;
-      });
+    this.socket.on("clientConnection", gameState => {
+      const { snakes, dots } = gameState;
+      console.log("TCL: Game -> constructor -> snakes", snakes);
+      this.updateScene(snakes);
     });
 
     this.socket.on("update", gameState => {
-      const { players } = gameState;
+      const { snakes, dots } = gameState;
 
-      this.updateScene(players);
-      this.player = this.gameObjects.find(player => {
-        return player.id === this.socket.id;
-      });
+      this.updateScene(snakes);
 
       this.update();
       this.render();
     });
   }
 
-  updateScene(gameObjects) {
-    this.gameObjects = gameObjects;
-    gameObjects.forEach(gameObject => {
-      // rebuild full Player from data received from the server
-      this.renderer.register(gameObject);
+  updateScene(snakes) {
+    this.snakes = snakes;
+    snakes.forEach(snake => {
+      this.renderer.register(snake);
+    });
+  }
+
+  getPlayer() {
+    return this.snakes.find(snake => {
+      return snake.id === this.socket.id;
     });
   }
 
@@ -64,13 +63,14 @@ export default class Game {
    * Update viewport (camera) and send input to server.
    */
   update() {
+    const player = this.getPlayer();
     this.camera.update();
 
-    if (this.player) {
-      this.camera.center(this.player.segments[0].x, this.player.segments[0].y);
+    if (player) {
+      this.camera.center(player.segments[0].x, player.segments[0].y);
       this.socket.emit("clientUpdate", {
-        inputState: { keys: this.km.keys },
-        player: this.player
+        inputState: { keys: this.keyboardInput.keys },
+        player
       });
     }
   }
