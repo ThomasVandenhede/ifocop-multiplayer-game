@@ -35,6 +35,10 @@ export default class Game {
       this.start();
     });
 
+    // Server has updated the game state:
+    // - new dots
+    // - snake heads
+    // - potential collisions
     this.socket.on("update", gameState => {
       if (this.preloading) return;
 
@@ -152,5 +156,62 @@ export default class Game {
     // notify server about input devices
     this.update();
     this.render();
+  }
+
+  /**
+   * Update viewport (camera) and send input to server.
+   */
+  update() {
+    const player = this.getPlayer();
+
+    if (player) {
+      // update camera
+      this.camera.zoomLevel =
+        1.15 * Math.pow(player.INITIAL_RADIUS / player.radius, 1 / 2);
+      this.camera.update();
+      this.camera.center(player.segments[0].x, player.segments[0].y);
+
+      // move snake's body
+      for (let i = 1; i < player.segments.length; i++) {
+        if (player.isBoosting) {
+          player.segments[i].x = utils.lerp(
+            player.segments[i - 1].x,
+            player.segments[i].x,
+            0.45
+          );
+          player.segments[i].y = utils.lerp(
+            player.segments[i - 1].y,
+            player.segments[i].y,
+            0.45
+          );
+        } else {
+          player.segments[i].x = utils.lerp(
+            player.segments[i - 1].x,
+            player.segments[i].x,
+            0.6
+          );
+          player.segments[i].y = utils.lerp(
+            player.segments[i - 1].y,
+            player.segments[i].y,
+            0.6
+          );
+        }
+      }
+
+      // CLIENT -> SERVER socket communication
+      this.socket.emit("clientUpdate", {
+        // Inform the server about input actions
+        inputState: { keys: this.keyboardInput.keys },
+        // Send snake's body positions to server
+        player
+      });
+    }
+  }
+
+  /**
+   * Draw to the canvas.
+   */
+  render() {
+    this.renderer.render();
   }
 }

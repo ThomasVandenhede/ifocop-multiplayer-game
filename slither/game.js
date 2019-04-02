@@ -27,7 +27,7 @@ class Game {
         this,
         Math.cos(utils.degreeToRad(alpha)) * r,
         Math.sin(utils.degreeToRad(alpha)) * r,
-        utils.randInt(9, 13)
+        utils.randInt(5, 9)
       );
     });
 
@@ -47,16 +47,22 @@ class Game {
       // notify all clients about the new connection
       this.io.emit("clientConnection", this.getGameState());
 
-      socket.on("clientUpdate", ({ inputState: { keys } }) => {
+      socket.on("clientUpdate", ({ inputState: { keys }, player }) => {
         const snake = this.snakes.find(snake => snake.id === socket.id);
 
-        // update snake's positiond
+        // update snake's body based on client data
+        for (let i = 1; i < snake.segments.length; i++) {
+          const segment = snake.segments[i];
+          segment.moveTo(player.segments[i].x, player.segments[i].y);
+        }
+
+        // process user input
         snake.isBoosting = keys.UP || keys.SPACE;
         if (keys.LEFT) {
-          snake.dir -= 6 / (snake.radius / snake.INITIAL_RADIUS);
+          snake.dir -= (8 * snake.INITIAL_RADIUS) / snake.radius;
         }
         if (keys.RIGHT) {
-          snake.dir += 6 / (snake.radius / snake.INITIAL_RADIUS);
+          snake.dir += 8 / (snake.radius / snake.INITIAL_RADIUS);
         }
       });
 
@@ -88,10 +94,12 @@ class Game {
   getGameState() {
     return {
       world: this.world,
+      // avoid circular references
       snakes: this.snakes.map(snake => {
         var { game, ...onlySnake } = snake;
         return onlySnake;
       }),
+      // same
       dots: this.dots.map(dot => {
         var { game, ...onlyDot } = dot;
         return onlyDot;

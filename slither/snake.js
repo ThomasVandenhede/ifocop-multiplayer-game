@@ -11,8 +11,8 @@ class Snake {
     this.color = randomize.hsl();
     this.isBoosting = false;
 
-    this.segments = [...Array(1)].map(() => new Vector(x, y));
-    this.INITIAL_RADIUS = 30;
+    this.segments = [...Array(150)].map(() => new Vector(x, y));
+    this.INITIAL_RADIUS = 20;
     this.radius = this.INITIAL_RADIUS;
 
     this.speed = 5;
@@ -65,10 +65,12 @@ class Snake {
 
     const dx = Math.cos(utils.degreeToRad(this.dir)) * this.speed;
     const dy = Math.sin(utils.degreeToRad(this.dir)) * this.speed;
+
     // find all collidable opponents
     const opponents = this.game.snakes.filter(
       snake => !snake.isDead && snake.id !== this.id
     );
+
     // put together an array with all opponents' segments
     const allSegments = opponents.reduce(
       (segments, opponent) => [
@@ -78,37 +80,9 @@ class Snake {
       []
     );
 
-    // move head
+    // move head (body gets updated on the client)
     this.head.x += dx;
     this.head.y += dy;
-
-    // MOVE THIS PART TO CLIENT
-    // move body
-    for (let i = 1; i < this.segments.length; i++) {
-      if (this.isBoosting) {
-        this.segments[i].x = utils.lerp(
-          this.segments[i - 1].x,
-          this.segments[i].x,
-          0.7
-        );
-        this.segments[i].y = utils.lerp(
-          this.segments[i - 1].y,
-          this.segments[i].y,
-          0.7
-        );
-      } else {
-        this.segments[i].x = utils.lerp(
-          this.segments[i - 1].x,
-          this.segments[i].x,
-          0.8
-        );
-        this.segments[i].y = utils.lerp(
-          this.segments[i - 1].y,
-          this.segments[i].y,
-          0.8
-        );
-      }
-    }
 
     // test head collision with dots
     for (let index = 0; index < this.game.dots.length; ) {
@@ -128,6 +102,7 @@ class Snake {
     const collidingSegments = allSegments.find(segment =>
       segment.containsPoint(this.forehead.x, this.forehead.y)
     );
+
     // test forehead collision with world boundaries
     const outsideWorldBounds = !this.game.world.containsPoint(
       this.forehead.x,
