@@ -15,11 +15,11 @@ export default class KeyboardManager {
       // contains state of all keys, ignores polling
     };
 
-    document.addEventListener("keydown", this.keyDownHandler.bind(this), false);
-    document.addEventListener("keyup", this.keyUpHandler.bind(this), false);
+    document.addEventListener("keydown", this.handleKeydown.bind(this), false);
+    document.addEventListener("keyup", this.handleKeyup.bind(this), false);
   }
 
-  keyDownHandler(e) {
+  handleKeydown(e) {
     const keyName = this.mappings[e.code];
     this.keys[keyName] = true;
     if (e.code === "ArrowLeft") this.keys.ArrowRight = false;
@@ -28,7 +28,7 @@ export default class KeyboardManager {
     if (e.code === "ArrowDown") this.keys.ArrowUp = false;
   }
 
-  keyUpHandler(e) {
+  handleKeyup(e) {
     const keyName = this.mappings[e.code];
     this.keys[keyName] = false;
   }
