@@ -4,6 +4,8 @@ import Renderer from "./renderer.js";
 
 export default class Game {
   constructor(socket) {
+    this.preloading = false;
+
     // canvas
     this.canvas = document.getElementById("canvas");
 
@@ -36,6 +38,8 @@ export default class Game {
     });
 
     this.socket.on("update", gameState => {
+      if (this.preloading) return;
+
       const { snakes, dots } = gameState;
       this.updateScene(snakes, dots);
 
@@ -84,14 +88,41 @@ export default class Game {
     this.renderer.render();
   }
 
+  preload(...resources) {
+    const tasks = [];
+
+    const knowExtensions = {
+      image: ["png", "gif", "jpg", "jpeg"],
+      sound: ["mp3"]
+    };
+    resources.forEach(resource => {
+      const ext = resource.src.split(".")[1];
+      tasks.push(
+        new Promise((resolve, reject) => {
+          if (knowExtensions.image.includes(ext)) {
+            const image = new Image();
+            image.src = resource.src;
+            image.onload = function() {
+              window[resource.name] = image;
+              resolve();
+            };
+          }
+        })
+      );
+    });
+
+    return Promise.all(tasks);
+  }
+
   start() {
-    window.snake = new Image();
-    window.snake.src = "/images/snake-body.png";
-    window.background = new Image();
-    window.background.src = "/images/bg54.jpg";
-    window.background.onload = function() {
+    this.preloading = true;
+    this.preload(
+      { src: "/images/snake-body.png", name: "snake" },
+      { src: "/images/bg54.jpg", name: "background" }
+    ).then(() => {
+      this.preloading = false;
       this.main();
-    }.bind(this);
+    });
   }
 
   /**
