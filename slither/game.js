@@ -1,6 +1,7 @@
 const GameTimer = require("./gameTimer.js").GameTimer;
 const Player = require("./player.js").Player;
 const utils = require("./utils.js");
+const Circle = require("./geometry/circle");
 
 class Game {
   constructor(io) {
