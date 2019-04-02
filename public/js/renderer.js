@@ -3,8 +3,14 @@ import AABB from "./aabb.js";
 export default class Renderer {
   constructor(game) {
     this.game = game;
+
+    // rendering canvas
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
+
+    // prerendering canvas
+    this.buffer = document.createElement("canvas");
+    this.bufferCtx = this.buffer.getContext("2d");
   }
 
   register(gameObject) {
@@ -132,10 +138,10 @@ export default class Renderer {
   }
 
   clearCanvas() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.bufferCtx.clearRect(0, 0, this.buffer.width, this.buffer.height);
   }
 
-  render() {
+  prerender() {
     // pre-rendering
     window.m_canvas = document.createElement("canvas");
     window.m_canvas.width = window.background.width;
@@ -150,8 +156,25 @@ export default class Renderer {
     );
 
     this.clearCanvas();
-    this.game.gameArea.render(this.ctx, this.game.camera);
-    this.game.dots.forEach(dot => dot.render(this.ctx, this.game.camera));
-    this.game.snakes.forEach(snake => snake.render(this.ctx, this.game.camera));
+    this.game.world.render(this.bufferCtx, this.game.camera);
+    this.game.dots.forEach(dot => dot.render(this.bufferCtx, this.game.camera));
+    this.game.snakes.forEach(snake =>
+      snake.render(this.bufferCtx, this.game.camera)
+    );
+  }
+
+  render() {
+    this.buffer.width = this.canvas.width;
+    this.buffer.height = this.canvas.height;
+    this.prerender();
+
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.drawImage(
+      this.buffer,
+      0,
+      0,
+      this.canvas.width,
+      this.canvas.height
+    );
   }
 }
