@@ -4,26 +4,24 @@ export default class Renderer {
   constructor(game) {
     this.game = game;
 
-    // rendering canvas
-    this.canvas = document.getElementById("canvas");
-    this.ctx = this.canvas.getContext("2d");
+    // Layering technique.
+    // We draw parts of the scene on different canvases.
+    this.backgroundCanvas = document.getElementById("background");
+    this.backgroundCtx = this.backgroundCanvas.getContext("2d");
+    this.backgroundCtx.imageSmoothing = false;
 
-    // prerendering canvas
-    this.buffer = document.createElement("canvas");
-    this.bufferCtx = this.buffer.getContext("2d");
+    this.dotsCanvas = document.getElementById("dots");
+    this.dotsCtx = this.dotsCanvas.getContext("2d");
+    this.dotsCtx.imageSmoothing = false;
+
+    this.snakesCanvas = document.getElementById("snakes");
+    this.snakesCtx = this.snakesCanvas.getContext("2d");
+    this.snakesCtx.imageSmoothing = false;
   }
 
   register(gameObject) {
     const methods = {
       Dot: function(ctx, camera) {
-        var boundingRect = new AABB({
-          x: this.x - this.r,
-          y: this.y - this.r,
-          width: this.r * 2,
-          height: this.r * 2
-        });
-        if (!boundingRect.overlaps(camera)) return;
-
         ctx.save();
         ctx.fillStyle = this.color;
         ctx.beginPath();
@@ -34,12 +32,16 @@ export default class Renderer {
           0,
           Math.PI * 2
         );
+        ctx.globalAlpha = 0.8;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = this.r * 3;
+        ctx.fill();
         ctx.fill();
         ctx.restore();
       },
       Snake: function(ctx, camera) {
         ctx.save();
-        var canvas = document.getElementById("canvas");
+        var canvas = document.getElementById("snakes");
         var m_canvas = document.createElement("canvas");
         var m_context = m_canvas.getContext("2d");
         var snake_bodypart_canvas = document.createElement("canvas");
@@ -51,8 +53,8 @@ export default class Renderer {
         snake_bodypart_canvas.height = window.snake.height;
         snake_bodypart_canvas_context.drawImage(window.snake, 0, 0);
 
-        m_canvas.width = canvas.width;
-        m_canvas.height = canvas.height;
+        m_canvas.width = window.innerWidth;
+        m_canvas.height = window.innerHeight;
 
         for (let i = this.segments.length - 1; i >= 0; i--) {
           const self = this.segments;
@@ -85,51 +87,19 @@ export default class Renderer {
       },
 
       World: function(ctx, camera) {
+        var canvas = document.getElementById("snakes");
         ctx.save();
-        const {
-          width: backgroundWidth,
-          height: backgroundHeight
-        } = window.background;
-
-        // actual rendering
-        let minX = camera.x - (camera.x % backgroundWidth) - backgroundWidth;
-        let minY = camera.y - (camera.y % backgroundHeight) - backgroundHeight;
-
-        for (let x = minX; x < camera.right; x += backgroundWidth) {
-          for (let y = minY; y < camera.bottom; y += backgroundHeight) {
-            ctx.drawImage(
-              window.m_canvas,
-              camera.applyToX(x),
-              camera.applyToY(y),
-              camera.applyToDistance(backgroundWidth),
-              camera.applyToDistance(backgroundHeight)
-            );
-          }
-        }
-        ctx.globalCompositeOperation = "destination-in";
-        ctx.beginPath();
-        ctx.arc(
-          camera.applyToX(this.x),
-          camera.applyToY(this.y),
-          camera.applyToDistance(this.r),
+        ctx.drawImage(
+          window.bgCanvas,
+          camera.x + 4000, // -4000 is world.x
+          camera.y + 4000, // -4000 is world.y
+          camera.width,
+          camera.height,
           0,
-          Math.PI * 2
-        );
-        ctx.fill();
-        ctx.restore();
-
-        ctx.save();
-        ctx.strokeStyle = "#7E0000";
-        ctx.lineWidth = camera.applyToDistance(10);
-        ctx.beginPath();
-        ctx.arc(
-          camera.applyToX(this.x),
-          camera.applyToY(this.y),
-          camera.applyToDistance(this.r),
           0,
-          Math.PI * 2
+          window.innerWidth,
+          window.innerHeight
         );
-        ctx.stroke();
         ctx.restore();
       }
     };
@@ -138,12 +108,17 @@ export default class Renderer {
     gameObject.render = methods[gameObject.type].bind(gameObject);
   }
 
-  clearCanvas() {
-    this.bufferCtx.clearRect(0, 0, this.buffer.width, this.buffer.height);
+  clearCanvases() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Clear all canvases
+    this.backgroundCtx.clearRect(0, 0, width, height);
+    this.dotsCtx.clearRect(0, 0, width, height);
+    this.snakesCtx.clearRect(0, 0, width, height);
   }
 
-  prerender() {
-    // pre-rendering
+  render() {
     window.m_canvas = document.createElement("canvas");
     window.m_canvas.width = window.background.width;
     window.m_canvas.height = window.background.height;
@@ -156,26 +131,27 @@ export default class Renderer {
       window.background.height
     );
 
-    this.clearCanvas();
-    this.game.world.render(this.bufferCtx, this.game.camera);
-    this.game.dots.forEach(dot => dot.render(this.bufferCtx, this.game.camera));
+    this.clearCanvases();
+
+    // Render world
+    this.game.world.render(this.backgroundCtx, this.game.camera);
+
+    // Render dots
+    this.game.dots.forEach(dot => {
+      var boundingRect = new AABB({
+        x: dot.x - dot.r,
+        y: dot.y - dot.r,
+        width: dot.r * 2,
+        height: dot.r * 2
+      });
+      if (boundingRect.overlaps(this.game.camera)) {
+        dot.render(this.dotsCtx, this.game.camera);
+      }
+    });
+
+    // Render snakes
     this.game.snakes.forEach(snake =>
-      snake.render(this.bufferCtx, this.game.camera)
-    );
-  }
-
-  render() {
-    this.buffer.width = this.canvas.width;
-    this.buffer.height = this.canvas.height;
-    this.prerender();
-
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.drawImage(
-      this.buffer,
-      0,
-      0,
-      this.canvas.width,
-      this.canvas.height
+      snake.render(this.snakesCtx, this.game.camera)
     );
   }
 }

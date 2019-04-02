@@ -3,21 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Page Title</title>
+    <title>FakeSlither.io</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/stylesheets/main.css" />
     <script src="/socket.io/socket.io.js"></script>
     <script type="module" src="/js/main.js"></script>
-
-    <style>
-      canvas {
-        background-color: #330000;
-      }
-    </style>
   </head>
   <body>
-    <canvas id="canvas">
-      <!-- game goes here -->
-    </canvas>
+    <main>
+      <div id="game-container">
+        <!-- background goes here -->
+        <canvas id="background"></canvas>
+        <!-- dots go here -->
+        <canvas id="dots"></canvas>
+        <!-- snakes go here -->
+        <canvas id="snakes"></canvas>
+      </div>
+    </main>
   </body>
 </html>

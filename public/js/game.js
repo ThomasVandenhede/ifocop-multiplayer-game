@@ -1,13 +1,14 @@
 import Camera from "./camera.js";
 import KeyboardManager from "./keyboardManager.js";
 import Renderer from "./renderer.js";
+import * as utils from "./utils.js";
 
 export default class Game {
   constructor(socket) {
     this.preloading = false;
 
     // canvas
-    this.canvas = document.getElementById("canvas");
+    this.canvas = document.getElementById("snakes");
 
     // renderer
     this.renderer = new Renderer(this);
@@ -25,6 +26,7 @@ export default class Game {
     // socket
     this.socket = socket;
 
+    //
     this.socket.on("clientConnection", gameState => {
       const { snakes, dots, world } = gameState;
       this.world = world;
@@ -61,29 +63,48 @@ export default class Game {
     });
   }
 
-  /**
-   * Update viewport (camera) and send input to server.
-   */
-  update() {
-    const player = this.getPlayer();
+  createBackgroundSprite() {
+    const bgCanvas = document.createElement("canvas");
+    bgCanvas.width = this.world.r * 2;
+    bgCanvas.height = this.world.r * 2;
+    const bgCtx = bgCanvas.getContext("2d");
+    const {
+      width: backgroundWidth,
+      height: backgroundHeight
+    } = window.background;
 
-    if (player) {
-      this.camera.zoomLevel =
-        1.15 * Math.pow(player.INITIAL_RADIUS / player.radius, 1 / 2);
-      this.camera.update();
-      this.camera.center(player.segments[0].x, player.segments[0].y);
-      this.socket.emit("clientUpdate", {
-        inputState: { keys: this.keyboardInput.keys },
-        player
-      });
+    bgCtx.save();
+
+    // draw hexagons
+    for (let x = 0; x < this.world.r * 2; x += backgroundWidth) {
+      for (let y = 0; y < this.world.r * 2; y += backgroundHeight) {
+        bgCtx.drawImage(
+          window.background,
+          x,
+          y,
+          backgroundWidth,
+          backgroundHeight
+        );
+      }
     }
-  }
+    bgCtx.globalCompositeOperation = "destination-in";
 
-  /**
-   * Draw to the canvas.
-   */
-  render() {
-    this.renderer.render();
+    // crop hexagons to circle
+    bgCtx.beginPath();
+    bgCtx.arc(this.world.r, this.world.r, this.world.r, 0, Math.PI * 2);
+    bgCtx.fill();
+    bgCtx.restore();
+
+    // draw outer border
+    bgCtx.save();
+    bgCtx.strokeStyle = "#7E0000";
+    bgCtx.lineWidth = 10;
+    bgCtx.beginPath();
+    bgCtx.arc(this.world.r, this.world.r, this.world.r, 0, Math.PI * 2);
+    bgCtx.stroke();
+    bgCtx.restore();
+
+    window.bgCanvas = bgCanvas;
   }
 
   preload(...resources) {
@@ -119,6 +140,7 @@ export default class Game {
       { src: "/images/bg54.jpg", name: "background" }
     ).then(() => {
       this.preloading = false;
+      this.createBackgroundSprite();
       this.main();
     });
   }
