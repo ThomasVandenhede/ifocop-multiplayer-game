@@ -1,4 +1,7 @@
 module.exports = {
+  randInt(start, end) {
+    return Math.floor(Math.random() * (end - start + 1) + start);
+  },
   toFixedPrecision(number, precision = 0) {
     return +number.toFixed(precision);
   },

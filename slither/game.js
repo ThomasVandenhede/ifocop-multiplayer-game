@@ -2,6 +2,7 @@ const GameTimer = require("./gameTimer.js").GameTimer;
 const Snake = require("./snake.js");
 const utils = require("./utils.js");
 const Circle = require("./geometry/circle");
+const Dot = require("./dot");
 
 class Game {
   constructor(io) {
@@ -9,16 +10,27 @@ class Game {
     this.io = io;
     this.connections = {};
 
+    // game world
+    this.world = new Circle(0, 0, 2000);
+
     // game timer
     this.timer = new GameTimer();
 
     // game objects
     this.snakes = [];
-    this.dots = [];
+    this.dots = [...Array(500)].map(_ => {
+      const radius = 10;
+      const alpha = utils.randInt(0, 360);
+      const r = utils.randInt(0, this.world.r - radius);
+      return new Dot(
+        this,
+        Math.cos(utils.degreeToRad(alpha)) * r,
+        Math.sin(utils.degreeToRad(alpha)) * r,
+        radius
+      );
+    });
 
     this.setupSocketEvents();
-
-    this.world = new Circle(0, 0, 2000);
   }
 
   setupSocketEvents() {
@@ -78,7 +90,10 @@ class Game {
         var { game, ...onlySnake } = snake;
         return onlySnake;
       }),
-      dots: this.dots
+      dots: this.dots.map(dot => {
+        var { game, ...onlyDot } = dot;
+        return onlyDot;
+      })
     };
   }
 

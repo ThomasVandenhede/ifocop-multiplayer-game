@@ -9,6 +9,28 @@ export default class Renderer {
 
   register(gameObject) {
     const methods = {
+      Dot: function(ctx, camera) {
+        var boundingRect = new AABB({
+          x: this.x - this.r,
+          y: this.y - this.r,
+          width: this.r * 2,
+          height: this.r * 2
+        });
+        if (!boundingRect.overlaps(camera)) return;
+
+        ctx.save();
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(
+          camera.applyToX(this.x),
+          camera.applyToY(this.y),
+          camera.applyToDistance(this.r),
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+        ctx.restore();
+      },
       Snake: function(ctx, camera) {
         ctx.save();
         var canvas = document.getElementById("canvas");
@@ -129,8 +151,7 @@ export default class Renderer {
 
     this.clearCanvas();
     this.game.gameArea.render(this.ctx, this.game.camera);
-    this.game.snakes.forEach(snake => {
-      snake.render(this.ctx, this.game.camera);
-    });
+    this.game.dots.forEach(dot => dot.render(this.ctx, this.game.camera));
+    this.game.snakes.forEach(snake => snake.render(this.ctx, this.game.camera));
   }
 }

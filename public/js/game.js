@@ -32,24 +32,26 @@ export default class Game {
 
     this.socket.on("clientConnection", gameState => {
       const { snakes, dots } = gameState;
-      console.log("TCL: Game -> constructor -> snakes", snakes);
-      this.updateScene(snakes);
+      this.updateScene(snakes, dots);
     });
 
     this.socket.on("update", gameState => {
       const { snakes, dots } = gameState;
-
-      this.updateScene(snakes);
+      this.updateScene(snakes, dots);
 
       this.update();
       this.render();
     });
   }
 
-  updateScene(snakes) {
+  updateScene(snakes, dots) {
     this.snakes = snakes;
+    this.dots = dots;
     snakes.forEach(snake => {
       this.renderer.register(snake);
+    });
+    dots.forEach(dot => {
+      this.renderer.register(dot);
     });
   }
 
