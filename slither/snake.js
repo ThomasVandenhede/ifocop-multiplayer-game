@@ -11,11 +11,7 @@ class Snake {
     this.color = randomize.hsl();
     this.isBoosting = false;
 
-    this.segments = [...Array(20)].map(
-      () => new Circle(x, y, Snake.INITIAL_RADIUS)
-    );
-    this.width = Snake.INITIAL_RADIUS;
-    this.height = Snake.INITIAL_RADIUS;
+    this.segments = [...Array(10)].map(() => new Vector(x, y));
     this.radius = Snake.INITIAL_RADIUS;
 
     this.speed = 5;
@@ -42,6 +38,12 @@ class Snake {
     );
   }
 
+  get segmentsBoundingCircles() {
+    return this.segments.map(
+      segment => new Circle(segment.x, segment.y, this.radius)
+    );
+  }
+
   die() {
     this.isDead = true;
   }
@@ -63,7 +65,10 @@ class Snake {
     );
     // put together an array with all opponents' segments
     const allSegments = opponents.reduce(
-      (segments, opponent) => [...segments, ...opponent.segments],
+      (segments, opponent) => [
+        ...segments,
+        ...opponent.segmentsBoundingCircles
+      ],
       []
     );
 
