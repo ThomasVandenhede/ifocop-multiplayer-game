@@ -27,7 +27,7 @@ class Game {
         this,
         Math.cos(utils.degreeToRad(alpha)) * r,
         Math.sin(utils.degreeToRad(alpha)) * r,
-        utils.randInt(10, 12)
+        utils.randInt(9, 13)
       );
     });
 
@@ -53,10 +53,10 @@ class Game {
         // update snake's positiond
         snake.isBoosting = keys.UP || keys.SPACE;
         if (keys.LEFT) {
-          snake.dir -= 3 / (snake.radius / Snake.INITIAL_RADIUS);
+          snake.dir -= 6 / (snake.radius / snake.INITIAL_RADIUS);
         }
         if (keys.RIGHT) {
-          snake.dir += 3 / (snake.radius / Snake.INITIAL_RADIUS);
+          snake.dir += 6 / (snake.radius / snake.INITIAL_RADIUS);
         }
       });
 
