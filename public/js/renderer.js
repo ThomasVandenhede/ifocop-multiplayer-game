@@ -54,9 +54,9 @@ export default class Renderer {
         m_canvas.width = canvas.width;
         m_canvas.height = canvas.height;
 
-        for (let index = this.segments.length - 1; index >= 0; index--) {
+        for (let i = this.segments.length - 1; i >= 0; i--) {
           const self = this.segments;
-          const position = self[index];
+          const position = self[i];
           const boundingRect = new AABB({
             x: position.x - this.radius / 2,
             y: position.y - this.radius / 2,
@@ -68,7 +68,8 @@ export default class Renderer {
           if (boundingRect.overlaps(camera)) {
             m_context.drawImage(
               snake_bodypart_canvas,
-              (index % 10) * window.snake.height,
+              // render i'th sprite in spritesheet
+              (i % 10) * window.snake.height,
               0,
               window.snake.height,
               window.snake.height,
