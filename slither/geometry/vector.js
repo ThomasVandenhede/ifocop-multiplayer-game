@@ -27,6 +27,11 @@ Vector.dotProduct = function(v1, v2) {
 };
 
 // public non static methods
+Vector.prototype.moveTo = function(x, y) {
+  this.x = x;
+  this.y = y;
+};
+
 Vector.prototype.scale = function(a) {
   return new Vector(this.x * a, this.y * a);
 };
