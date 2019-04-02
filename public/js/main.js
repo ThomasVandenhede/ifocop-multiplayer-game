@@ -4,18 +4,21 @@ document.addEventListener("DOMContentLoaded", function() {
   // Initialize socket.io
   const socket = io();
 
-  function fitCanvasToContainer() {
-    var canvasWidth = parseFloat(getComputedStyle(canvas).width);
-    var canvasHeight = parseFloat(getComputedStyle(canvas).height);
-    // change resolution
-    canvas.setAttribute("width", canvasWidth);
-    canvas.setAttribute("height", canvasHeight);
+  function resize() {
+    const canvases = Array.from(
+      document.querySelectorAll("#game-container canvas")
+    );
+    canvases.forEach(canvas => {
+      const canvasWidth = window.innerWidth;
+      const canvasHeight = window.innerHeight;
+      // change resolution
+      canvas.setAttribute("width", canvasWidth);
+      canvas.setAttribute("height", canvasHeight);
+    });
   }
 
-  const canvas = document.getElementById("canvas");
-
-  window.addEventListener("resize", fitCanvasToContainer);
-  fitCanvasToContainer();
+  window.addEventListener("resize", resize);
+  resize();
 
   const game = new Game(socket);
 });
