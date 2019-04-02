@@ -27,7 +27,7 @@ class Game {
         this,
         Math.cos(utils.degreeToRad(alpha)) * r,
         Math.sin(utils.degreeToRad(alpha)) * r,
-        radius
+        utils.randInt(10, 12)
       );
     });
 
