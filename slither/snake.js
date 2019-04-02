@@ -11,15 +11,12 @@ class Snake {
     this.color = randomize.hsl();
     this.isBoosting = false;
 
-    this.segments = [...Array(10)].map(() => new Vector(x, y));
-    this.radius = Snake.INITIAL_RADIUS;
+    this.segments = [...Array(1)].map(() => new Vector(x, y));
+    this.INITIAL_RADIUS = 30;
+    this.radius = this.INITIAL_RADIUS;
 
     this.speed = 5;
     this.dir = 0;
-  }
-
-  static get INITIAL_RADIUS() {
-    return 30;
   }
 
   /**

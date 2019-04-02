@@ -66,9 +66,11 @@ export default class Game {
    */
   update() {
     const player = this.getPlayer();
-    this.camera.update();
 
     if (player) {
+      this.camera.zoomLevel =
+        1.15 * Math.pow(player.INITIAL_RADIUS / player.radius, 1 / 2);
+      this.camera.update();
       this.camera.center(player.segments[0].x, player.segments[0].y);
       this.socket.emit("clientUpdate", {
         inputState: { keys: this.keyboardInput.keys },
