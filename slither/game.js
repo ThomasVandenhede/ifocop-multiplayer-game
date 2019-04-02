@@ -11,7 +11,8 @@ class Game {
     this.connections = {};
 
     // game world
-    this.world = new Circle(0, 0, 2000);
+    this.world = new Circle(0, 0, 4000);
+    this.world.type = "World";
 
     // game timer
     this.timer = new GameTimer();
@@ -86,6 +87,7 @@ class Game {
 
   getGameState() {
     return {
+      world: this.world,
       snakes: this.snakes.map(snake => {
         var { game, ...onlySnake } = snake;
         return onlySnake;

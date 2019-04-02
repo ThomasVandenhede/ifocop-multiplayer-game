@@ -77,7 +77,7 @@ export default class Renderer {
         ctx.restore();
       },
 
-      GameArea: function(ctx, camera) {
+      World: function(ctx, camera) {
         ctx.save();
         const {
           width: backgroundWidth,

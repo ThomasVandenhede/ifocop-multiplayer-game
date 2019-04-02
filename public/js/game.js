@@ -15,13 +15,6 @@ export default class Game {
     // game objects
     this.dots = [];
     this.snakes = [];
-    this.gameArea = {
-      type: "GameArea",
-      x: 0,
-      y: 0,
-      r: 2000
-    };
-    this.renderer.register(this.gameArea);
 
     // input management
     this.keyboardInput = new KeyboardManager();
@@ -33,8 +26,11 @@ export default class Game {
     this.socket = socket;
 
     this.socket.on("clientConnection", gameState => {
-      const { snakes, dots } = gameState;
-      this.updateScene(snakes, dots);
+      const { snakes, dots, world } = gameState;
+      this.world = world;
+      this.renderer.register(this.world);
+
+      this.start();
     });
 
     this.socket.on("update", gameState => {
