@@ -1,7 +1,8 @@
-const randomize = require("./randomize.js");
+const randomize = require("./randomize");
+const SnakeSegment = require("./snakeSegment");
 const Vector = require("./geometry/vector");
 const Circle = require("./geometry/circle");
-const utils = require("./utils.js");
+const utils = require("./utils");
 
 class Snake {
   constructor(game, id, x = 0, y = 0) {
@@ -11,11 +12,12 @@ class Snake {
     this.color = randomize.hsl();
     this.isBoosting = false;
 
-    this.segments = [...Array(150)].map(() => new Vector(x, y));
-    this.INITIAL_RADIUS = 20;
+    this.segments = [...Array(1)].map(() => new SnakeSegment(this, x, y, 0));
+    this.INITIAL_RADIUS = 10;
     this.radius = this.INITIAL_RADIUS;
+    this.radius = 20;
 
-    this.speed = 5;
+    this.speed = 50;
     this.dir = 0;
   }
 
@@ -43,6 +45,7 @@ class Snake {
 
   die() {
     this.isDead = true;
+    this.game.io.to(`${this.id}`).emit("gameOver");
   }
 
   eatFood(dot, index) {
@@ -51,20 +54,20 @@ class Snake {
       ...this.game.dots.slice(index + 1)
     ];
     // collision
-    this.radius += 0.05;
+    this.radius += 0.1;
   }
 
   dropFood() {
     console.log("DROP FOOD");
   }
 
-  update() {
+  update(dt) {
     if (this.isDead) return;
 
-    this.speed = this.isBoosting ? 20 : 10;
+    this.speed = this.isBoosting ? 400 : 200;
 
-    const dx = Math.cos(utils.degreeToRad(this.dir)) * this.speed;
-    const dy = Math.sin(utils.degreeToRad(this.dir)) * this.speed;
+    const dx = Math.cos(utils.degreeToRad(this.dir)) * this.speed * dt;
+    const dy = Math.sin(utils.degreeToRad(this.dir)) * this.speed * dt;
 
     // find all collidable opponents
     const opponents = this.game.snakes.filter(
