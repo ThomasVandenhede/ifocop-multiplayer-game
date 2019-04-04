@@ -15,7 +15,22 @@ body {
   height: 100vh;
 }
 
+#login {
+  z-index: 1;
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  background-color: gray;
+  opacity: 1;
+  transition: opacity 1s ease-in-out;
+}
+
+#login.fade-out {
+  opacity: 0;
+}
+
 #game-container {
+  z-index: 0;
   position: absolute;
   width: 100vw;
   height: 100vh;

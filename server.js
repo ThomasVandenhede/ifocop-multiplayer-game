@@ -18,5 +18,5 @@ app.get("/", function(req, res) {
 
 http.listen(PORT_NUMBER, function() {
   console.log("listening on *:%d", PORT_NUMBER);
-  game.gameLoop();
+  game.step();
 });

@@ -3,6 +3,8 @@ import Game from "./game.js";
 document.addEventListener("DOMContentLoaded", function() {
   // Initialize socket.io
   const socket = io();
+  // Button to enter the game
+  const buttonStart = document.getElementById("start");
 
   function resize() {
     const canvases = Array.from(
@@ -19,6 +21,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
   window.addEventListener("resize", resize);
   resize();
+
+  buttonStart.addEventListener("click", function(event) {
+    const loginEl = document.getElementById("login");
+    loginEl.classList.add("fade-out");
+    socket.emit("join game");
+  });
 
   const game = new Game(socket);
 });

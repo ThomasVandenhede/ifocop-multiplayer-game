@@ -5,7 +5,8 @@ import * as utils from "./utils.js";
 
 export default class Game {
   constructor(socket) {
-    this.preloading = false;
+    // Boolean, is true when the player has entered the game.
+    this.isReady = false;
 
     // canvas
     this.canvas = document.getElementById("snakes");
@@ -26,21 +27,43 @@ export default class Game {
     // socket
     this.socket = socket;
 
-    //
-    this.socket.on("clientConnection", gameState => {
+    // build game
+    this.socket.on("startGameClient", json => {
+      const gameState = JSON.parse(json);
       const { snakes, dots, world } = gameState;
+      // build game
       this.world = world;
       this.renderer.register(this.world);
 
+      // build dots
+      this.dots = dots;
+      dots.forEach(dot => {
+        this.renderer.register(dot);
+      });
+
+      // build snakes
+      this.snakes = snakes;
+      snakes.forEach(snake => {
+        this.renderer.register(snake);
+      });
+
       this.start();
+    });
+
+    this.socket.on("game over", () => {
+      const loginEl = document.getElementById("login");
+
+      this.socket.emit("leave game");
+      loginEl.classList.remove("fade-out");
     });
 
     // Server has updated the game state:
     // - new dots
     // - snake heads
     // - potential collisions
-    this.socket.on("update", gameState => {
-      if (this.preloading) return;
+    this.socket.on("update", json => {
+      const gameState = JSON.parse(json);
+      if (!this.isReady) return;
 
       const { snakes, dots } = gameState;
       this.updateScene(snakes, dots);
@@ -143,7 +166,7 @@ export default class Game {
       { src: "/images/snake-body.png", name: "snake" },
       { src: "/images/bg54.jpg", name: "background" }
     ).then(() => {
-      this.preloading = false;
+      this.isReady = true;
       this.createBackgroundSprite();
       this.main();
     });

@@ -6,18 +6,18 @@ const Dot = require("./dot");
 
 class Game {
   constructor(io) {
-    // socket.io
+    // Socket.io
     this.io = io;
     this.connections = {};
 
-    // game world
+    // Game world
     this.world = new Circle(0, 0, 4000);
     this.world.type = "World";
 
-    // game timer
+    // Game timer
     this.timer = new GameTimer();
 
-    // game objects
+    // Game objects
     this.snakes = [];
     this.dots = [...Array(500)].map(_ => {
       const radius = 10;
@@ -34,49 +34,93 @@ class Game {
     this.setupSocketEvents();
   }
 
+  getSnakeById(id) {
+    return this.snakes.find(snake => snake.id === id);
+  }
+
   setupSocketEvents() {
     this.io.on("connection", socket => {
       console.log("new connection: ", socket.id);
 
+      // Save new connection
       this.connections[socket.id] = {
         socket
       };
 
-      this.snakes.push(new Snake(this, socket.id));
+      socket.on("join game", () => {
+        // Add new snake
+        this.snakes.push(new Snake(this, socket.id));
 
-      // notify all clients about the new connection
-      this.io.emit("clientConnection", this.getGameState());
+        // Notify all clients about the new connection
+        socket.emit("startGameClient", this.getGameStateAsJson());
+        socket.join("game");
+      });
 
       socket.on("clientUpdate", ({ inputState: { keys }, player }) => {
-        const snake = this.snakes.find(snake => snake.id === socket.id);
+        const snake = this.getSnakeById(socket.id);
 
-        // update snake's body based on client data
+        // Update snake's body based on client data
         for (let i = 1; i < snake.segments.length; i++) {
           const segment = snake.segments[i];
           segment.moveTo(player.segments[i].x, player.segments[i].y);
         }
 
-        // process user input
+        // Process user input
         snake.isBoosting = keys.UP || keys.SPACE;
         if (keys.LEFT) {
           snake.dir -= (8 * snake.INITIAL_RADIUS) / snake.radius;
         }
         if (keys.RIGHT) {
-          snake.dir += 8 / (snake.radius / snake.INITIAL_RADIUS);
+          snake.dir += (8 * snake.INITIAL_RADIUS) / snake.radius;
         }
+
+        // Keep angle within [0, 360[ range
+        snake.dir = ((snake.dir % 360) + 360) % 360;
+      });
+
+      socket.on("leave game", () => {
+        socket.leave("game");
       });
 
       socket.on("disconnect", () => {
-        // delete snake
+        // Delete snake
         this.snakes = this.snakes.filter(snake => snake.id !== socket.id);
 
-        // delete connection
+        // Delete connection
         delete this.connections[socket.id];
 
-        // notify client
+        // Notify client
         this.io.emit("clientDisconnect", socket.id);
       });
     });
+  }
+
+  getGameStateAsJson() {
+    const gameState = {
+      world: this.world,
+      // Avoid circular references
+      snakes: this.snakes,
+      // Same
+      dots: this.dots
+    };
+
+    // Avoid circular references
+    return JSON.stringify(gameState, (key, value) => {
+      if (key === "game") {
+        // omit game reference from within snakes
+        return undefined;
+      } else if (key === "snake") {
+        // omit snake reference from within snake segments
+        return undefined;
+      } else {
+        return value;
+      }
+    });
+  }
+
+  step() {
+    this.update();
+    setTimeout(this.step.bind(this), 1000 / 30);
   }
 
   update() {
@@ -87,29 +131,8 @@ class Game {
       snake.update(dt);
     });
 
-    // notify client about new game state
-    this.io.emit("update", this.getGameState());
-  }
-
-  getGameState() {
-    return {
-      world: this.world,
-      // avoid circular references
-      snakes: this.snakes.map(snake => {
-        var { game, ...onlySnake } = snake;
-        return onlySnake;
-      }),
-      // same
-      dots: this.dots.map(dot => {
-        var { game, ...onlyDot } = dot;
-        return onlyDot;
-      })
-    };
-  }
-
-  gameLoop() {
-    this.update();
-    setTimeout(this.gameLoop.bind(this), 1000 / 30);
+    // notify client *in the game* about new game state
+    this.io.to("game").emit("update", this.getGameStateAsJson());
   }
 }
 
