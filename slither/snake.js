@@ -80,6 +80,16 @@ class Snake {
 
     this.speed = this.isBoosting ? 400 : 200;
 
+    if (this.target !== this.dir) {
+      if (utils.absAngleWithin180(this.target - this.dir) < 0) {
+        this.dir -= this.steeringSpeed * dt;
+      }
+      if (utils.absAngleWithin180(this.target - this.dir) > 0) {
+        this.dir += this.steeringSpeed * dt;
+      }
+      this.dir = utils.absAngleWithin180(this.dir);
+    }
+
     const dx = Math.cos(utils.degreeToRad(this.dir)) * this.speed * dt;
     const dy = Math.sin(utils.degreeToRad(this.dir)) * this.speed * dt;
 

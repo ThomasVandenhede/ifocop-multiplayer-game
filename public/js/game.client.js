@@ -1,5 +1,6 @@
 import Camera from "./camera.js";
 import Keyboard from "./keyboard/Keyboard.js";
+import Mouse from "./Mouse.js";
 import Renderer from "./renderer.js";
 import * as utils from "./utils.js";
 
@@ -23,6 +24,21 @@ export default class Game {
 
     // input management
     this.keyboard = new Keyboard();
+    this.mouse = new Mouse({ element: this.canvas, callbackContext: this });
+
+    this.mouse.mouseMoveCallback = function() {
+      const mouseCenterOffsetX = this.mouse.x - this.canvas.width / 2;
+      const mouseCenterOffsetY = this.mouse.y - this.canvas.height / 2;
+      const dir =
+        (Math.atan2(mouseCenterOffsetY, mouseCenterOffsetX) / (2 * Math.PI)) *
+        360;
+
+      this.actions.push({
+        frameDuration: this.dt,
+        command: "SET_TARGET",
+        data: { dir }
+      });
+    };
 
     // camera
     this.camera = new Camera({ canvas: this.canvas });
@@ -214,7 +230,7 @@ export default class Game {
   update() {
     this.then = this.now;
     this.now = Date.now();
-    const dt = (this.now - this.then) / 1000;
+    this.dt = (this.now - this.then) / 1000;
 
     this.applyServerGameState();
     const player = this.getPlayer();
@@ -227,48 +243,22 @@ export default class Game {
 
     // Add action to actions packet
     if (this.keyboard.keys.ArrowRight.isPressed) {
-      this.actions.push({ frameDuration: dt, command: "RIGHT" });
+      this.actions.push({ frameDuration: this.dt, command: "RIGHT" });
     }
     if (this.keyboard.keys.ArrowLeft.isPressed) {
-      this.actions.push({ frameDuration: dt, command: "LEFT" });
+      this.actions.push({ frameDuration: this.dt, command: "LEFT" });
     }
     if (
       this.keyboard.keys.Space.isPressed ||
-      this.keyboard.keys.ArrowUp.isPressed
+      this.keyboard.keys.ArrowUp.isPressed ||
+      this.mouse.buttons[0]
     ) {
       !player.isBoosting &&
-        this.actions.push({ frameDuration: dt, command: "BOOST_START" });
+        this.actions.push({ frameDuration: this.dt, command: "BOOST_START" });
     } else {
       player.isBoosting &&
-        this.actions.push({ frameDuration: dt, command: "BOOST_STOP" });
+        this.actions.push({ frameDuration: this.dt, command: "BOOST_STOP" });
     }
-
-    // // move snake's body
-    // for (let i = 1; i < player.segments.length; i++) {
-    //   if (player.isBoosting) {
-    //     player.segments[i].x = utils.lerp(
-    //       player.segments[i - 1].x,
-    //       player.segments[i].x,
-    //       0.45
-    //     );
-    //     player.segments[i].y = utils.lerp(
-    //       player.segments[i - 1].y,
-    //       player.segments[i].y,
-    //       0.45
-    //     );
-    //   } else {
-    //     player.segments[i].x = utils.lerp(
-    //       player.segments[i - 1].x,
-    //       player.segments[i].x,
-    //       0.6
-    //     );
-    //     player.segments[i].y = utils.lerp(
-    //       player.segments[i - 1].y,
-    //       player.segments[i].y,
-    //       0.6
-    //     );
-    //   }
-    // }
   }
 
   /**
