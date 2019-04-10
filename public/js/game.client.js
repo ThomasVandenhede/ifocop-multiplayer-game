@@ -70,27 +70,9 @@ export default class Game {
     // - new dots
     // - snake heads
     // - potential collisions
-    this.socket.on("update", json => {
+    this.socket.on("server-update", gameStateJSON => {
       if (!this.isReady) return;
-      this.serverGameState = JSON.parse(json);
-    });
-  }
-
-  /**
-   * Empty action packet.
-   */
-  clearActions() {
-    this.actions = [];
-  }
-
-  updateScene() {
-    this.snakes = this.serverGameState.snakes;
-    this.dots = this.serverGameState.dots;
-    this.snakes.forEach(snake => {
-      this.renderer.register(snake);
-    });
-    this.dots.forEach(dot => {
-      this.renderer.register(dot);
+      this.serverGameState = JSON.parse(gameStateJSON);
     });
   }
 
@@ -203,6 +185,13 @@ export default class Game {
     }, 1000 / fps);
   }
 
+  /**
+   * Empty action packet.
+   */
+  clearActions() {
+    this.actions = [];
+  }
+
   createUpdateLoop(fps) {
     return setInterval(() => {
       this.update();
@@ -225,64 +214,76 @@ export default class Game {
   update() {
     this.then = this.now;
     this.now = Date.now();
-    const dt = this.now - this.then;
+    const dt = (this.now - this.then) / 1000;
 
-    this.updateScene();
-
+    this.applyServerGameState();
     const player = this.getPlayer();
 
-    if (player) {
-      // update camera
-      this.camera.zoomLevel =
-        1.15 * Math.pow(player.INITIAL_RADIUS / player.radius, 1 / 2);
-      this.camera.update();
-      this.camera.center(player.segments[0].x, player.segments[0].y);
+    // update camera
+    this.camera.zoomLevel =
+      1.15 * Math.pow(player.INITIAL_RADIUS / player.radius, 1 / 2);
+    this.camera.update();
+    this.camera.center(player.segments[0].x, player.segments[0].y);
 
-      // Add action to actions packet
-      if (this.keyboard.keys.ArrowRight.isPressed) {
-        this.actions.push({ frameDuration: dt, command: "RIGHT" });
-      }
-      if (this.keyboard.keys.ArrowLeft.isPressed) {
-        this.actions.push({ frameDuration: dt, command: "LEFT" });
-      }
-      if (
-        this.keyboard.keys.Space.isPressed ||
-        this.keyboard.keys.ArrowUp.isPressed
-      ) {
-        !player.isBoosting &&
-          this.actions.push({ frameDuration: dt, command: "BOOST_START" });
-      } else {
-        player.isBoosting &&
-          this.actions.push({ frameDuration: dt, command: "BOOST_STOP" });
-      }
-
-      // // move snake's body
-      // for (let i = 1; i < player.segments.length; i++) {
-      //   if (player.isBoosting) {
-      //     player.segments[i].x = utils.lerp(
-      //       player.segments[i - 1].x,
-      //       player.segments[i].x,
-      //       0.45
-      //     );
-      //     player.segments[i].y = utils.lerp(
-      //       player.segments[i - 1].y,
-      //       player.segments[i].y,
-      //       0.45
-      //     );
-      //   } else {
-      //     player.segments[i].x = utils.lerp(
-      //       player.segments[i - 1].x,
-      //       player.segments[i].x,
-      //       0.6
-      //     );
-      //     player.segments[i].y = utils.lerp(
-      //       player.segments[i - 1].y,
-      //       player.segments[i].y,
-      //       0.6
-      //     );
-      //   }
-      // }
+    // Add action to actions packet
+    if (this.keyboard.keys.ArrowRight.isPressed) {
+      this.actions.push({ frameDuration: dt, command: "RIGHT" });
     }
+    if (this.keyboard.keys.ArrowLeft.isPressed) {
+      this.actions.push({ frameDuration: dt, command: "LEFT" });
+    }
+    if (
+      this.keyboard.keys.Space.isPressed ||
+      this.keyboard.keys.ArrowUp.isPressed
+    ) {
+      !player.isBoosting &&
+        this.actions.push({ frameDuration: dt, command: "BOOST_START" });
+    } else {
+      player.isBoosting &&
+        this.actions.push({ frameDuration: dt, command: "BOOST_STOP" });
+    }
+
+    // // move snake's body
+    // for (let i = 1; i < player.segments.length; i++) {
+    //   if (player.isBoosting) {
+    //     player.segments[i].x = utils.lerp(
+    //       player.segments[i - 1].x,
+    //       player.segments[i].x,
+    //       0.45
+    //     );
+    //     player.segments[i].y = utils.lerp(
+    //       player.segments[i - 1].y,
+    //       player.segments[i].y,
+    //       0.45
+    //     );
+    //   } else {
+    //     player.segments[i].x = utils.lerp(
+    //       player.segments[i - 1].x,
+    //       player.segments[i].x,
+    //       0.6
+    //     );
+    //     player.segments[i].y = utils.lerp(
+    //       player.segments[i - 1].y,
+    //       player.segments[i].y,
+    //       0.6
+    //     );
+    //   }
+    // }
+  }
+
+  /**
+   * Apply server game state.
+   */
+  applyServerGameState() {
+    const serverTimestamp = this.serverGameState.timestamp;
+    this.dots = this.serverGameState.dots;
+    this.dots.forEach(dot => {
+      this.renderer.register(dot);
+    });
+    this.snakes = this.serverGameState.snakes;
+    this.snakes.forEach(snake => {
+      this.renderer.register(snake);
+    });
   }
 
   /**

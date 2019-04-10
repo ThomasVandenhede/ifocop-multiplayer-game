@@ -66,6 +66,14 @@ class Game {
       });
 
       socket.on("client-input", ({ player, actions }) => {
+        // const snake = this.getSnakeById(socket.id);
+
+        // // Update snake's body based on client data
+        // for (let i = 1; i < snake.segments.length; i++) {
+        //   const segment = snake.segments[i];
+        //   segment.moveTo(player.segments[i].x, player.segments[i].y);
+        // }
+
         // Organize player input by socket ID.
         this.clientInput[socket.id] = [
           ...(this.clientInput[socket.id] || []),
@@ -114,6 +122,7 @@ class Game {
 
   getGameStateAsJson() {
     const gameState = {
+      timestamp: Date.now(),
       world: this.world,
       // Avoid circular references
       snakes: this.snakes,
@@ -151,7 +160,7 @@ class Game {
     });
 
     // notify client *in the game* about new game state
-    this.io.to("game").emit("update", this.getGameStateAsJson());
+    this.io.to("game").emit("server-update", this.getGameStateAsJson());
   }
 
   /**
@@ -159,14 +168,15 @@ class Game {
    */
   handleClientInput() {
     for (let socketID in this.clientInput) {
+      const player = this.getSnakeById(socketID);
+
       this.clientInput[socketID].forEach(action => {
         const { frameDuration, command } = action;
-        const player = this.getSnakeById(socketID);
         if (command === "RIGHT") {
-          player.dir += (player.steeringSpeed * frameDuration) / 1000;
+          player.dir += player.steeringSpeed * frameDuration;
         }
         if (command === "LEFT") {
-          player.dir -= (player.steeringSpeed * frameDuration) / 1000;
+          player.dir -= player.steeringSpeed * frameDuration;
         }
         if (command === "BOOST_START") {
           player.isBoosting = true;
