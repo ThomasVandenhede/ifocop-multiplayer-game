@@ -12,14 +12,24 @@ class Snake {
     this.color = randomize.hsl();
     this.isBoosting = false;
 
-    this.segments = [...Array(1)].map(() => new SnakeSegment(this, x, y, 0));
+    // positions
+    this.x = x;
+    this.y = y;
+    this.segments = Array.from(
+      { length: 10 },
+      () => new SnakeSegment(this, x, y, 0)
+    );
+
+    // speed
+    this.steeringSpeed = 200;
+    this.speed = 50;
+
+    // size
     this.INITIAL_RADIUS = 10;
     this.radius = this.INITIAL_RADIUS;
     this.radius = 20;
 
-    this.steeringSpeed = 200;
-    this.speed = 50;
-
+    // direction
     // 'target' is the direction the player wants to go into
     // 'dir' is the actual direction of the snake
     this.target = this.dir = 0;
@@ -73,23 +83,9 @@ class Snake {
     const dx = Math.cos(utils.degreeToRad(this.dir)) * this.speed * dt;
     const dy = Math.sin(utils.degreeToRad(this.dir)) * this.speed * dt;
 
-    // find all collidable opponents
-    const opponents = this.game.snakes.filter(
-      snake => !snake.isDead && snake.id !== this.id
-    );
-
-    // put together an array with all opponents' segments
-    const allSegments = opponents.reduce(
-      (segments, opponent) => [
-        ...segments,
-        ...opponent.segmentsBoundingCircles
-      ],
-      []
-    );
-
-    // move head (body gets updated on the client)
-    this.head.x += dx;
-    this.head.y += dy;
+    // move snake's head (which also happens to be the snakes location)
+    this.x = this.head.x += dx;
+    this.y = this.head.y += dy;
 
     // move snake's body
     for (let i = 1; i < this.segments.length; i++) {
@@ -118,6 +114,29 @@ class Snake {
       }
     }
 
+    this.runCollisionDetection();
+  }
+
+  runCollisionDetection() {
+    // find all collidable opponents
+    const opponents = this.game.snakes.filter(
+      snake => !snake.isDead && snake.id !== this.id
+    );
+
+    // put together an array with all opponents' segments
+    const allSegments = opponents.reduce(
+      (segments, opponent) => [
+        ...segments,
+        ...opponent.segmentsBoundingCircles
+      ],
+      []
+    );
+
+    // test forehead collision with other snakes
+    const collidingSegments = allSegments.find(segment =>
+      segment.containsPoint(this.forehead.x, this.forehead.y)
+    );
+
     // test head collision with dots
     for (let index = 0; index < this.game.dots.length; ) {
       const dot = this.game.dots[index];
@@ -131,11 +150,6 @@ class Snake {
         index++;
       }
     }
-
-    // test forehead collision with other snakes
-    const collidingSegments = allSegments.find(segment =>
-      segment.containsPoint(this.forehead.x, this.forehead.y)
-    );
 
     // test forehead collision with world boundaries
     const outsideWorldBounds = !this.game.world.containsPoint(
