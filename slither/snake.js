@@ -17,8 +17,12 @@ class Snake {
     this.radius = this.INITIAL_RADIUS;
     this.radius = 20;
 
+    this.steeringSpeed = 200;
     this.speed = 50;
-    this.dir = 0;
+
+    // 'target' is the direction the player wants to go into
+    // 'dir' is the actual direction of the snake
+    this.target = this.dir = 0;
   }
 
   /**
@@ -86,6 +90,33 @@ class Snake {
     // move head (body gets updated on the client)
     this.head.x += dx;
     this.head.y += dy;
+
+    // move snake's body
+    for (let i = 1; i < this.segments.length; i++) {
+      if (this.isBoosting) {
+        this.segments[i].x = utils.lerp(
+          this.segments[i - 1].x,
+          this.segments[i].x,
+          0.45
+        );
+        this.segments[i].y = utils.lerp(
+          this.segments[i - 1].y,
+          this.segments[i].y,
+          0.45
+        );
+      } else {
+        this.segments[i].x = utils.lerp(
+          this.segments[i - 1].x,
+          this.segments[i].x,
+          0.6
+        );
+        this.segments[i].y = utils.lerp(
+          this.segments[i - 1].y,
+          this.segments[i].y,
+          0.6
+        );
+      }
+    }
 
     // test head collision with dots
     for (let index = 0; index < this.game.dots.length; ) {

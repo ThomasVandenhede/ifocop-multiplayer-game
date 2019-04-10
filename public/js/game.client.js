@@ -1,10 +1,13 @@
 import Camera from "./camera.js";
-import KeyboardManager from "./keyboardManager.js";
+import Keyboard from "./keyboard/Keyboard.js";
 import Renderer from "./renderer.js";
 import * as utils from "./utils.js";
 
 export default class Game {
   constructor(socket) {
+    // time
+    this.then = this.now = Date.now();
+
     // Boolean, is true when the player has entered the game.
     this.isReady = false;
 
@@ -19,13 +22,19 @@ export default class Game {
     this.snakes = [];
 
     // input management
-    this.keyboardInput = new KeyboardManager();
+    this.keyboard = new Keyboard();
 
     // camera
     this.camera = new Camera({ canvas: this.canvas });
 
     // socket
     this.socket = socket;
+
+    // Player actions. A packet of actions to be sent to the websocket server.
+    this.actions = [];
+
+    // Server game state
+    this.serverGameState = null;
 
     // build game
     this.socket.on("startGameClient", json => {
@@ -62,28 +71,33 @@ export default class Game {
     // - snake heads
     // - potential collisions
     this.socket.on("update", json => {
-      const gameState = JSON.parse(json);
       if (!this.isReady) return;
-
-      const { snakes, dots } = gameState;
-      this.updateScene(snakes, dots);
-
-      this.update();
-      this.render();
+      this.serverGameState = JSON.parse(json);
     });
   }
 
-  updateScene(snakes, dots) {
-    this.snakes = snakes;
-    this.dots = dots;
-    snakes.forEach(snake => {
+  /**
+   * Empty action packet.
+   */
+  clearActions() {
+    this.actions = [];
+  }
+
+  updateScene() {
+    this.snakes = this.serverGameState.snakes;
+    this.dots = this.serverGameState.dots;
+    this.snakes.forEach(snake => {
       this.renderer.register(snake);
     });
-    dots.forEach(dot => {
+    this.dots.forEach(dot => {
       this.renderer.register(dot);
     });
   }
 
+  /**
+   * Method that retrives the curent player.
+   * @returns {object} The player's snake
+   */
   getPlayer() {
     return this.snakes.find(snake => {
       return snake.id === this.socket.id;
@@ -168,23 +182,53 @@ export default class Game {
     ).then(() => {
       this.isReady = true;
       this.createBackgroundSprite();
-      this.main();
+      this.inputLoop = this.createInputLoop(4);
+      this.updateLoop = this.createUpdateLoop(30);
+      this.renderLoop();
     });
+  }
+
+  /**
+   * Create a loop that perdiodically sends input packets to the websocket server.
+   * @param {number} fps - The loop framerate
+   * @returns {number} The interval ID
+   */
+  createInputLoop(fps) {
+    return setInterval(() => {
+      this.socket.emit("client-input", {
+        player: this.getPlayer(),
+        actions: this.actions
+      });
+      this.clearActions();
+    }, 1000 / fps);
+  }
+
+  createUpdateLoop(fps) {
+    return setInterval(() => {
+      this.update();
+    }, 1000 / fps);
   }
 
   /**
    * The main game loop.
    */
-  main() {
+  renderLoop() {
+    this.frame = requestAnimationFrame(this.renderLoop.bind(this));
     // notify server about input devices
-    this.update();
     this.render();
+    return this.frame;
   }
 
   /**
    * Update viewport (camera) and send input to server.
    */
   update() {
+    this.then = this.now;
+    this.now = Date.now();
+    const dt = this.now - this.then;
+
+    this.updateScene();
+
     const player = this.getPlayer();
 
     if (player) {
@@ -194,40 +238,50 @@ export default class Game {
       this.camera.update();
       this.camera.center(player.segments[0].x, player.segments[0].y);
 
-      // move snake's body
-      for (let i = 1; i < player.segments.length; i++) {
-        if (player.isBoosting) {
-          player.segments[i].x = utils.lerp(
-            player.segments[i - 1].x,
-            player.segments[i].x,
-            0.45
-          );
-          player.segments[i].y = utils.lerp(
-            player.segments[i - 1].y,
-            player.segments[i].y,
-            0.45
-          );
-        } else {
-          player.segments[i].x = utils.lerp(
-            player.segments[i - 1].x,
-            player.segments[i].x,
-            0.6
-          );
-          player.segments[i].y = utils.lerp(
-            player.segments[i - 1].y,
-            player.segments[i].y,
-            0.6
-          );
-        }
+      // Add action to actions packet
+      if (this.keyboard.keys.ArrowRight.isPressed) {
+        this.actions.push({ frameDuration: dt, command: "RIGHT" });
+      }
+      if (this.keyboard.keys.ArrowLeft.isPressed) {
+        this.actions.push({ frameDuration: dt, command: "LEFT" });
+      }
+      if (
+        this.keyboard.keys.Space.isPressed ||
+        this.keyboard.keys.ArrowUp.isPressed
+      ) {
+        !player.isBoosting &&
+          this.actions.push({ frameDuration: dt, command: "BOOST_START" });
+      } else {
+        player.isBoosting &&
+          this.actions.push({ frameDuration: dt, command: "BOOST_STOP" });
       }
 
-      // CLIENT -> SERVER socket communication
-      this.socket.emit("clientUpdate", {
-        // Inform the server about input actions
-        inputState: { keys: this.keyboardInput.keys },
-        // Send snake's body positions to server
-        player
-      });
+      // // move snake's body
+      // for (let i = 1; i < player.segments.length; i++) {
+      //   if (player.isBoosting) {
+      //     player.segments[i].x = utils.lerp(
+      //       player.segments[i - 1].x,
+      //       player.segments[i].x,
+      //       0.45
+      //     );
+      //     player.segments[i].y = utils.lerp(
+      //       player.segments[i - 1].y,
+      //       player.segments[i].y,
+      //       0.45
+      //     );
+      //   } else {
+      //     player.segments[i].x = utils.lerp(
+      //       player.segments[i - 1].x,
+      //       player.segments[i].x,
+      //       0.6
+      //     );
+      //     player.segments[i].y = utils.lerp(
+      //       player.segments[i - 1].y,
+      //       player.segments[i].y,
+      //       0.6
+      //     );
+      //   }
+      // }
     }
   }
 

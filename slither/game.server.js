@@ -1,8 +1,8 @@
 const GameTimer = require("./gameTimer.js").GameTimer;
 const Snake = require("./snake.js");
 const utils = require("./utils.js");
-const Circle = require("./geometry/circle");
-const Dot = require("./dot");
+const Circle = require("./geometry/circle.js");
+const Dot = require("./dot.js");
 
 class Game {
   constructor(io) {
@@ -16,6 +16,15 @@ class Game {
 
     // Game timer
     this.timer = new GameTimer();
+
+    // Client actions sorted by socket ID. Example:
+    // {
+    //   "1234": [
+    //     { frameDuration: 16, action: "LEFT" },
+    //     { frameDuration: 18, action: "RIGHT" },
+    //   ]
+    // }
+    this.clientInput = {};
 
     // Game objects
     this.snakes = [];
@@ -56,27 +65,35 @@ class Game {
         socket.join("game");
       });
 
-      socket.on("clientUpdate", ({ inputState: { keys }, player }) => {
-        const snake = this.getSnakeById(socket.id);
-
-        // Update snake's body based on client data
-        for (let i = 1; i < snake.segments.length; i++) {
-          const segment = snake.segments[i];
-          segment.moveTo(player.segments[i].x, player.segments[i].y);
-        }
-
-        // Process user input
-        snake.isBoosting = keys.UP || keys.SPACE;
-        if (keys.LEFT) {
-          snake.dir -= (8 * snake.INITIAL_RADIUS) / snake.radius;
-        }
-        if (keys.RIGHT) {
-          snake.dir += (8 * snake.INITIAL_RADIUS) / snake.radius;
-        }
-
-        // Keep angle within [0, 360[ range
-        snake.dir = ((snake.dir % 360) + 360) % 360;
+      socket.on("client-input", ({ player, actions }) => {
+        // Organize player input by socket ID.
+        this.clientInput[socket.id] = [
+          ...(this.clientInput[socket.id] || []),
+          ...actions
+        ];
       });
+
+      // socket.on("clientUpdate", ({ player }) => {
+      //   const snake = this.getSnakeById(socket.id);
+
+      //   // Update snake's body based on client data
+      //   for (let i = 1; i < snake.segments.length; i++) {
+      //     const segment = snake.segments[i];
+      //     segment.moveTo(player.segments[i].x, player.segments[i].y);
+      //   }
+
+      //   // Process user input
+      //   snake.isBoosting = keys.UP || keys.SPACE;
+      //   if (keys.LEFT) {
+      //     snake.dir -= (8 * snake.INITIAL_RADIUS) / snake.radius;
+      //   }
+      //   if (keys.RIGHT) {
+      //     snake.dir += (8 * snake.INITIAL_RADIUS) / snake.radius;
+      //   }
+
+      //   // Keep angle within [0, 360[ range
+      //   snake.dir = ((snake.dir % 360) + 360) % 360;
+      // });
 
       socket.on("leave game", () => {
         socket.leave("game");
@@ -127,12 +144,46 @@ class Game {
     this.timer.update();
     const dt = utils.toFixedPrecision(this.timer.getEllapsedTime() / 1000, 2);
 
+    this.handleClientInput();
+
     this.snakes.forEach(snake => {
       snake.update(dt);
     });
 
     // notify client *in the game* about new game state
     this.io.to("game").emit("update", this.getGameStateAsJson());
+  }
+
+  /**
+   * Convert each client action into a player command.
+   */
+  handleClientInput() {
+    for (let socketID in this.clientInput) {
+      this.clientInput[socketID].forEach(action => {
+        const { frameDuration, command } = action;
+        const player = this.getSnakeById(socketID);
+        if (command === "RIGHT") {
+          player.dir += (player.steeringSpeed * frameDuration) / 1000;
+        }
+        if (command === "LEFT") {
+          player.dir -= (player.steeringSpeed * frameDuration) / 1000;
+        }
+        if (command === "BOOST_START") {
+          player.isBoosting = true;
+        }
+        if (command === "BOOST_STOP") {
+          player.isBoosting = false;
+        }
+      });
+    }
+    this.emptyClientInput();
+  }
+
+  /**
+   * Empty client input array.
+   */
+  emptyClientInput() {
+    this.clientInput = {};
   }
 }
 
