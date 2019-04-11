@@ -6,7 +6,7 @@ module.exports = {
     return +number.toFixed(precision);
   },
   noop() {},
-  degreeToRad(degree) {
+  degToRad(degree) {
     return (degree / 360) * 2 * Math.PI;
   },
   lerp(v0, v1, t) {

@@ -1,5 +1,4 @@
 const randomize = require("./randomize");
-const SnakeSegment = require("./snakeSegment");
 const Vector = require("./geometry/vector");
 const Circle = require("./geometry/circle");
 const utils = require("./utils");
@@ -15,10 +14,7 @@ class Snake {
     // positions
     this.x = x;
     this.y = y;
-    this.segments = Array.from(
-      { length: 20 },
-      () => new SnakeSegment(this, x, y, 0)
-    );
+    this.segments = Array.from({ length: 20 }, () => ({ x, y, dir: 0 }));
 
     // speed
     this.steeringSpeed = 180;
@@ -47,8 +43,8 @@ class Snake {
   // that should NOT collide with other snakes nor leave the game area.
   get forehead() {
     return new Vector(
-      this.head.x + Math.cos(utils.degreeToRad(this.dir)) * this.radius,
-      this.head.y + Math.sin(utils.degreeToRad(this.dir)) * this.radius
+      this.head.x + Math.cos(utils.degToRad(this.dir)) * this.radius,
+      this.head.y + Math.sin(utils.degToRad(this.dir)) * this.radius
     );
   }
 
@@ -91,15 +87,17 @@ class Snake {
       this.dir = utils.absAngleWithin180(this.dir);
     }
 
-    const dx = Math.cos(utils.degreeToRad(this.dir)) * this.speed * dt;
-    const dy = Math.sin(utils.degreeToRad(this.dir)) * this.speed * dt;
+    const dx = Math.cos(utils.degToRad(this.dir)) * this.speed * dt;
+    const dy = Math.sin(utils.degToRad(this.dir)) * this.speed * dt;
 
     // move snake's head (which also happens to be the snakes location)
     this.x = this.head.x += dx;
     this.y = this.head.y += dy;
+    this.head.dir = this.dir;
 
     // move snake's body
     for (let i = 1; i < this.segments.length; i++) {
+      // translate segment
       if (this.isBoosting) {
         this.segments[i].x = utils.lerp(
           this.segments[i - 1].x,
@@ -123,6 +121,14 @@ class Snake {
           0.6
         );
       }
+      // work out the snake's body part direction
+      this.segments[i].dir =
+        (Math.atan2(
+          this.segments[i - 1].y - this.segments[i].y,
+          this.segments[i - 1].x - this.segments[i].x
+        ) *
+          360) /
+        (Math.PI * 2);
     }
 
     this.runCollisionDetection();

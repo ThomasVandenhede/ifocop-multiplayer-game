@@ -29,14 +29,14 @@ class Game {
 
     // Game objects
     this.snakes = [];
-    this.dots = [...Array(500)].map(() => {
+    this.dots = [...Array(200)].map(() => {
       const radius = 10;
       const alpha = utils.randInt(0, 360);
       const r = utils.randInt(0, this.world.r - radius);
       return new Dot(
         this,
-        Math.cos(utils.degreeToRad(alpha)) * r,
-        Math.sin(utils.degreeToRad(alpha)) * r,
+        Math.cos(utils.degToRad(alpha)) * r,
+        Math.sin(utils.degToRad(alpha)) * r,
         utils.randInt(8, 10)
       );
     });
@@ -157,7 +157,6 @@ class Game {
     this.handleClientInput();
 
     this.snakes.forEach(snake => snake.update(dt));
-    this.dots.forEach(dot => dot.update(dt));
 
     // notify client *in the game* about new game state
     this.io.to("game").emit("server-update", this.getGameStateAsJson());

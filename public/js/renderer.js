@@ -1,5 +1,6 @@
 import AABB from "./aabb.js";
 import * as utils from "./utils.js";
+import { PI2 } from "./constants.js";
 
 export default class Renderer {
   constructor(game) {
@@ -9,41 +10,37 @@ export default class Renderer {
     // We draw parts of the scene on different canvases.
     this.backgroundCanvas = document.getElementById("background");
     this.backgroundCtx = this.backgroundCanvas.getContext("2d");
-    this.backgroundCtx.imageSmoothing = false;
 
     this.dotsCanvas = document.getElementById("dots");
     this.dotsCtx = this.dotsCanvas.getContext("2d");
-    this.dotsCtx.imageSmoothing = false;
 
     this.snakesCanvas = document.getElementById("snakes");
     this.snakesCtx = this.snakesCanvas.getContext("2d");
-    this.snakesCtx.imageSmoothing = false;
   }
 
   register(gameObject) {
     const methods = {
       Dot: function(ctx, camera) {
-        const time = Date.now() - this.creationTime + this.randomDeltaTime;
-        const t = (Math.cos((time * Math.PI * 2) / this.blinkDuration) + 1) / 2;
+        const timePI2 = (Date.now() - this.creationTime) * PI2;
+        const t = (Math.cos(timePI2 / this.blinkDuration) + 1) / 2;
         this.r = utils.lerp(this.INITIAL_RADIUS * 0.75, this.INITIAL_RADIUS, t);
         this.x =
           this.INITIAL_X +
-          this.rotateRadius *
-            Math.cos((time * Math.PI * 2) / this.rotateDuration);
+          this.rotateRadius * Math.cos(timePI2 / this.rotateDuration);
         this.y =
           this.INITIAL_Y +
-          this.rotateRadius *
-            Math.sin((time * Math.PI * 2) / this.rotateDuration);
+          this.rotateRadius * Math.sin(timePI2 / this.rotateDuration);
 
         ctx.save();
         ctx.fillStyle = this.color;
+
         ctx.beginPath();
         ctx.arc(
           camera.applyToX(this.x),
           camera.applyToY(this.y),
           camera.applyToDistance(this.r),
           0,
-          Math.PI * 2
+          PI2
         );
         ctx.globalAlpha = 0.8;
         ctx.shadowColor = this.color;
@@ -54,13 +51,14 @@ export default class Renderer {
       },
       Snake: function(ctx, camera) {
         ctx.save();
-        var canvas = document.getElementById("snakes");
-        var m_canvas = document.createElement("canvas");
-        var m_context = m_canvas.getContext("2d");
-        var snake_bodypart_canvas = document.createElement("canvas");
-        var snake_bodypart_canvas_context = snake_bodypart_canvas.getContext(
+        const canvas = document.getElementById("snakes");
+        const m_canvas = document.createElement("canvas");
+        const m_context = m_canvas.getContext("2d");
+        const snake_bodypart_canvas = document.createElement("canvas");
+        const snake_bodypart_canvas_context = snake_bodypart_canvas.getContext(
           "2d"
         );
+        const transformedRadius = camera.applyToDistance(this.radius);
 
         snake_bodypart_canvas.width = window.snake.width;
         snake_bodypart_canvas.height = window.snake.height;
@@ -70,17 +68,24 @@ export default class Renderer {
         m_canvas.height = window.innerHeight;
 
         for (let i = this.segments.length - 1; i >= 0; i--) {
-          const self = this.segments;
-          const position = self[i];
+          m_context.save();
+          const segment = this.segments[i];
           const boundingRect = new AABB({
-            x: position.x - this.radius / 2,
-            y: position.y - this.radius / 2,
+            x: segment.x - this.radius / 2,
+            y: segment.y - this.radius / 2,
             width: this.radius,
             height: this.radius
           });
 
           // rendering body part only if it's visible in viewport
           if (boundingRect.overlaps(camera)) {
+            const transformedX = camera.applyToX(segment.x);
+            const transformedY = camera.applyToY(segment.y);
+
+            // apply segment rotation
+            m_context.translate(transformedX, transformedY);
+            m_context.rotate(utils.degToRad(segment.dir));
+
             m_context.drawImage(
               snake_bodypart_canvas,
               // render i'th sprite in spritesheet
@@ -88,12 +93,13 @@ export default class Renderer {
               0,
               window.snake.height,
               window.snake.height,
-              camera.applyToX(position.x - this.radius),
-              camera.applyToY(position.y - this.radius),
-              camera.applyToDistance(this.radius * 2),
-              camera.applyToDistance(this.radius * 2)
+              -transformedRadius,
+              -transformedRadius,
+              transformedRadius * 2,
+              transformedRadius * 2
             );
           }
+          m_context.restore();
         }
         ctx.drawImage(m_canvas, 0, 0);
         ctx.restore();

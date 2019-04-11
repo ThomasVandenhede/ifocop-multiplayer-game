@@ -3,6 +3,7 @@ import Keyboard from "./keyboard/Keyboard.js";
 import Mouse from "./Mouse.js";
 import Renderer from "./renderer.js";
 import * as utils from "./utils.js";
+import { PI2 } from "./constants.js";
 
 export default class Game {
   constructor(socket) {
@@ -30,8 +31,7 @@ export default class Game {
       const mouseCenterOffsetX = this.mouse.x - this.canvas.width / 2;
       const mouseCenterOffsetY = this.mouse.y - this.canvas.height / 2;
       const dir =
-        (Math.atan2(mouseCenterOffsetY, mouseCenterOffsetX) / (2 * Math.PI)) *
-        360;
+        (Math.atan2(mouseCenterOffsetY, mouseCenterOffsetX) / PI2) * 360;
 
       this.actions.push({
         frameDuration: this.dt,
@@ -87,7 +87,7 @@ export default class Game {
     // - snake heads
     // - potential collisions
     this.socket.on("server-update", gameStateJSON => {
-      if (!this.isReady) return;
+      // if (!this.isReady) return;
       this.serverGameState = JSON.parse(gameStateJSON);
     });
   }
@@ -130,7 +130,7 @@ export default class Game {
 
     // crop hexagons to circle
     bgCtx.beginPath();
-    bgCtx.arc(this.world.r, this.world.r, this.world.r, 0, Math.PI * 2);
+    bgCtx.arc(this.world.r, this.world.r, this.world.r, 0, PI2);
     bgCtx.fill();
     bgCtx.restore();
 
@@ -139,7 +139,7 @@ export default class Game {
     bgCtx.strokeStyle = "#7E0000";
     bgCtx.lineWidth = 10;
     bgCtx.beginPath();
-    bgCtx.arc(this.world.r, this.world.r, this.world.r, 0, Math.PI * 2);
+    bgCtx.arc(this.world.r, this.world.r, this.world.r, 0, PI2);
     bgCtx.stroke();
     bgCtx.restore();
 
@@ -175,13 +175,13 @@ export default class Game {
   start() {
     this.preloading = true;
     this.preload(
-      { src: "/images/snake-body.png", name: "snake" },
+      { src: "/images/snake-body2.png", name: "snake" },
       { src: "/images/bg54.jpg", name: "background" }
     ).then(() => {
       this.isReady = true;
       this.createBackgroundSprite();
       this.inputLoop = this.createInputLoop(4);
-      this.updateLoop = this.createUpdateLoop(60);
+      this.updateLoop = this.createUpdateLoop(30);
       this.renderLoop();
     });
   }
