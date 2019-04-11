@@ -169,26 +169,26 @@ class Game {
   handleClientInput() {
     for (let socketID in this.clientInput) {
       const player = this.getSnakeById(socketID);
-      if (!player) return;
-
-      this.clientInput[socketID].forEach(action => {
-        const { frameDuration, command, data } = action;
-        if (command === "RIGHT") {
-          player.target = player.dir += player.steeringSpeed * frameDuration;
-        }
-        if (command === "LEFT") {
-          player.target = player.dir -= player.steeringSpeed * frameDuration;
-        }
-        if (command === "BOOST_START") {
-          player.isBoosting = true;
-        }
-        if (command === "BOOST_STOP") {
-          player.isBoosting = false;
-        }
-        if (command === "SET_TARGET") {
-          player.target = data.dir;
-        }
-      });
+      if (player) {
+        this.clientInput[socketID].forEach(action => {
+          const { frameDuration, command, data } = action;
+          if (command === "RIGHT") {
+            player.target = player.dir += player.steeringSpeed * frameDuration;
+          }
+          if (command === "LEFT") {
+            player.target = player.dir -= player.steeringSpeed * frameDuration;
+          }
+          if (command === "BOOST_START") {
+            player.isBoosting = true;
+          }
+          if (command === "BOOST_STOP") {
+            player.isBoosting = false;
+          }
+          if (command === "SET_TARGET") {
+            player.target = data.dir;
+          }
+        });
+      }
     }
     this.emptyClientInput();
   }
