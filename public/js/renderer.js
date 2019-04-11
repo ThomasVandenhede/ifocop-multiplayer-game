@@ -153,7 +153,7 @@ export default class Renderer {
     this.clearCanvases();
 
     // Render world
-    // this.game.world.render(this.backgroundCtx, this.game.camera);
+    this.game.world.render(this.backgroundCtx, this.game.camera);
 
     // Render dots
     this.game.dots.forEach(dot => {

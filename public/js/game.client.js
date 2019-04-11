@@ -49,9 +49,6 @@ export default class Game {
     // Player actions. A packet of actions to be sent to the websocket server.
     this.actions = [];
 
-    // Server game state
-    this.serverGameState = null;
-
     // build game
     this.socket.on("startGameClient", json => {
       const gameState = JSON.parse(json);
@@ -87,9 +84,78 @@ export default class Game {
     // - snake heads
     // - potential collisions
     this.socket.on("server-update", gameStateJSON => {
-      this.serverGameState = JSON.parse(gameStateJSON);
-      this.applyServerGameState();
+      this.applyServerGameState(JSON.parse(gameStateJSON));
       this.update();
+    });
+  }
+
+  /**
+   * Apply server game state.
+   */
+  applyServerGameState(gameState) {
+    // update dots
+    this.dots = gameState.dots;
+    this.dots.forEach(dot => {
+      this.renderer.register(dot);
+    });
+
+    // update opponents
+    const player = this.getPlayer();
+    const opponents = gameState.snakes.filter(snake => snake.id !== player.id);
+
+    // update only player's head
+    const updatedPlayer = gameState.snakes.find(
+      snake => snake.id === player.id
+    );
+
+    // update player's state
+    player.isBoosting = updatedPlayer.isBoosting;
+    player.radius = updatedPlayer.radius;
+
+    // update snake's head
+    player.segments[0] = updatedPlayer.segments[0];
+
+    // update snake's body
+    for (let i = 1; i < player.segments.length; i++) {
+      // translate segment
+      if (player.isBoosting) {
+        player.segments[i].x = utils.lerp(
+          player.segments[i - 1].x,
+          player.segments[i].x,
+          0.45
+        );
+        player.segments[i].y = utils.lerp(
+          player.segments[i - 1].y,
+          player.segments[i].y,
+          0.45
+        );
+      } else {
+        player.segments[i].x = utils.lerp(
+          player.segments[i - 1].x,
+          player.segments[i].x,
+          0.6
+        );
+        player.segments[i].y = utils.lerp(
+          player.segments[i - 1].y,
+          player.segments[i].y,
+          0.6
+        );
+      }
+      // work out the snake's body part direction
+      player.segments[i].dir =
+        (Math.atan2(
+          player.segments[i - 1].y - player.segments[i].y,
+          player.segments[i - 1].x - player.segments[i].x
+        ) *
+          360) /
+        (Math.PI * 2);
+    }
+
+    // bring all snakes together
+    this.snakes = [...opponents, player];
+
+    this.snakes.forEach(snake => {
+      this.renderer.register(snake);
     });
   }
 
@@ -249,6 +315,11 @@ export default class Game {
     if (this.keyboard.keys.ArrowLeft.isPressed) {
       this.actions.push({ frameDuration: this.dt, command: "LEFT" });
     }
+    const boost =
+      this.keyboard.keys.Space.isPressed ||
+      this.keyboard.keys.ArrowUp.isPressed ||
+      this.mouse.buttons[0];
+
     if (
       this.keyboard.keys.Space.isPressed ||
       this.keyboard.keys.ArrowUp.isPressed ||
@@ -257,77 +328,10 @@ export default class Game {
       !player.isBoosting &&
         this.actions.push({ frameDuration: this.dt, command: "BOOST_START" });
     } else {
-      player.isBoosting &&
-        this.actions.push({ frameDuration: this.dt, command: "BOOST_STOP" });
-    }
-  }
-
-  /**
-   * Apply server game state.
-   */
-  applyServerGameState() {
-    // update dots
-    this.dots = this.serverGameState.dots;
-    this.dots.forEach(dot => {
-      this.renderer.register(dot);
-    });
-
-    // update opponents
-    const player = this.getPlayer();
-    const opponents = this.serverGameState.snakes.filter(
-      snake => snake.id !== player.id
-    );
-
-    // update only player's head
-    const updatedPlayer = this.serverGameState.snakes.find(
-      snake => snake.id === player.id
-    );
-
-    // update snake's head
-    player.segments[0] = updatedPlayer.segments[0];
-
-    // update snake's body
-    for (let i = 1; i < player.segments.length; i++) {
-      // translate segment
       if (player.isBoosting) {
-        player.segments[i].x = utils.lerp(
-          player.segments[i - 1].x,
-          player.segments[i].x,
-          0.45
-        );
-        player.segments[i].y = utils.lerp(
-          player.segments[i - 1].y,
-          player.segments[i].y,
-          0.45
-        );
-      } else {
-        player.segments[i].x = utils.lerp(
-          player.segments[i - 1].x,
-          player.segments[i].x,
-          0.6
-        );
-        player.segments[i].y = utils.lerp(
-          player.segments[i - 1].y,
-          player.segments[i].y,
-          0.6
-        );
+        this.actions.push({ frameDuration: this.dt, command: "BOOST_STOP" });
       }
-      // work out the snake's body part direction
-      player.segments[i].dir =
-        (Math.atan2(
-          player.segments[i - 1].y - player.segments[i].y,
-          player.segments[i - 1].x - player.segments[i].x
-        ) *
-          360) /
-        (Math.PI * 2);
     }
-
-    // bring all snakes together
-    this.snakes = [...opponents, player];
-
-    this.snakes.forEach(snake => {
-      this.renderer.register(snake);
-    });
   }
 
   /**

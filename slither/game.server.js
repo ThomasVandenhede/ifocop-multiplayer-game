@@ -150,12 +150,13 @@ class Game {
       world: this.world,
       // Avoid circular references
       snakes: this.snakes.map(snake =>
-        (({ id, segments, radius, INITIAL_RADIUS, type }) => ({
+        (({ id, segments, radius, INITIAL_RADIUS, type, isBoosting }) => ({
           id,
           segments,
           radius,
           INITIAL_RADIUS,
-          type
+          type,
+          isBoosting
         }))(snake)
       ),
       // Same
