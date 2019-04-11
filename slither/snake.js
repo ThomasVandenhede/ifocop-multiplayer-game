@@ -14,7 +14,7 @@ class Snake {
     // positions
     this.x = x;
     this.y = y;
-    this.segments = Array.from({ length: 20 }, () => ({ x, y, dir: 0 }));
+    this.segments = Array.from({ length: 5 }, () => ({ x, y, dir: 0 }));
 
     // speed
     this.steeringSpeed = 180;
@@ -95,41 +95,41 @@ class Snake {
     this.y = this.head.y += dy;
     this.head.dir = this.dir;
 
-    // move snake's body
-    for (let i = 1; i < this.segments.length; i++) {
-      // translate segment
-      if (this.isBoosting) {
-        this.segments[i].x = utils.lerp(
-          this.segments[i - 1].x,
-          this.segments[i].x,
-          0.45
-        );
-        this.segments[i].y = utils.lerp(
-          this.segments[i - 1].y,
-          this.segments[i].y,
-          0.45
-        );
-      } else {
-        this.segments[i].x = utils.lerp(
-          this.segments[i - 1].x,
-          this.segments[i].x,
-          0.6
-        );
-        this.segments[i].y = utils.lerp(
-          this.segments[i - 1].y,
-          this.segments[i].y,
-          0.6
-        );
-      }
-      // work out the snake's body part direction
-      this.segments[i].dir =
-        (Math.atan2(
-          this.segments[i - 1].y - this.segments[i].y,
-          this.segments[i - 1].x - this.segments[i].x
-        ) *
-          360) /
-        (Math.PI * 2);
-    }
+    // // move snake's body
+    // for (let i = 1; i < this.segments.length; i++) {
+    //   // translate segment
+    //   if (this.isBoosting) {
+    //     this.segments[i].x = utils.lerp(
+    //       this.segments[i - 1].x,
+    //       this.segments[i].x,
+    //       0.45
+    //     );
+    //     this.segments[i].y = utils.lerp(
+    //       this.segments[i - 1].y,
+    //       this.segments[i].y,
+    //       0.45
+    //     );
+    //   } else {
+    //     this.segments[i].x = utils.lerp(
+    //       this.segments[i - 1].x,
+    //       this.segments[i].x,
+    //       0.6
+    //     );
+    //     this.segments[i].y = utils.lerp(
+    //       this.segments[i - 1].y,
+    //       this.segments[i].y,
+    //       0.6
+    //     );
+    //   }
+    //   // work out the snake's body part direction
+    //   this.segments[i].dir =
+    //     (Math.atan2(
+    //       this.segments[i - 1].y - this.segments[i].y,
+    //       this.segments[i - 1].x - this.segments[i].x
+    //     ) *
+    //       360) /
+    //     (Math.PI * 2);
+    // }
 
     this.runCollisionDetection();
   }

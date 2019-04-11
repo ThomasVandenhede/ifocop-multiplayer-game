@@ -62,7 +62,7 @@ class Game {
         this.snakes.push(new Snake(this, socket.id));
 
         // Notify all clients about the new connection
-        socket.emit("startGameClient", this.getGameStateAsJson());
+        socket.emit("startGameClient", this.getGameStateAsJSON());
         socket.join("game");
       });
 
@@ -121,12 +121,43 @@ class Game {
     });
   }
 
-  getGameStateAsJson() {
+  getGameStateAsJSON() {
+    const gameState = {
+      world: this.world,
+      // Avoid circular references
+      snakes: this.snakes,
+      // Same
+      dots: this.dots
+    };
+
+    // Avoid circular references
+    return JSON.stringify(gameState, (key, value) => {
+      if (key === "game") {
+        // omit game reference from within snakes
+        return undefined;
+      } else if (key === "snake") {
+        // omit snake reference from within snake segments
+        return undefined;
+      } else {
+        return value;
+      }
+    });
+  }
+
+  getUpdatedGameStateAsJSON() {
     const gameState = {
       timestamp: Date.now(),
       world: this.world,
       // Avoid circular references
-      snakes: this.snakes,
+      snakes: this.snakes.map(snake =>
+        (({ id, segments, radius, INITIAL_RADIUS, type }) => ({
+          id,
+          segments,
+          radius,
+          INITIAL_RADIUS,
+          type
+        }))(snake)
+      ),
       // Same
       dots: this.dots
     };
@@ -159,7 +190,7 @@ class Game {
     this.snakes.forEach(snake => snake.update(dt));
 
     // notify client *in the game* about new game state
-    this.io.to("game").emit("server-update", this.getGameStateAsJson());
+    this.io.to("game").emit("server-update", this.getUpdatedGameStateAsJSON());
   }
 
   /**
