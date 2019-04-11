@@ -22,6 +22,7 @@ export default class Game {
     // game objects
     this.dots = [];
     this.snakes = [];
+    this.player = null; // reference to us, the player
 
     // input management
     this.keyboard = new Keyboard();
@@ -65,6 +66,8 @@ export default class Game {
 
       // build snakes
       this.snakes = snakes;
+      this.player = this.snakes.find(snake => snake.id === this.socket.id);
+
       snakes.forEach(snake => {
         this.renderer.register(snake);
       });
@@ -84,15 +87,15 @@ export default class Game {
     // - snake heads
     // - potential collisions
     this.socket.on("server-update", gameStateJSON => {
-      this.applyServerGameState(JSON.parse(gameStateJSON));
-      this.update();
+      this.processServerUpdate(JSON.parse(gameStateJSON));
+      this.processClientInput();
     });
   }
 
   /**
    * Apply server game state.
    */
-  applyServerGameState(gameState) {
+  processServerUpdate(gameState) {
     // update dots
     this.dots = gameState.dots;
     this.dots.forEach(dot => {
@@ -100,73 +103,70 @@ export default class Game {
     });
 
     // update opponents
-    const player = this.getPlayer();
-    const opponents = gameState.snakes.filter(snake => snake.id !== player.id);
+    const opponents = gameState.snakes.filter(
+      snake => snake.id !== this.player.id
+    );
 
     // update only player's head
     const updatedPlayer = gameState.snakes.find(
-      snake => snake.id === player.id
+      snake => snake.id === this.player.id
     );
 
     // update player's state
-    player.isBoosting = updatedPlayer.isBoosting;
-    player.radius = updatedPlayer.radius;
+    this.player.isBoosting = updatedPlayer.isBoosting;
+    this.player.radius = updatedPlayer.radius;
 
     // update snake's head
-    player.segments[0] = updatedPlayer.segments[0];
+    this.player.segments[0] = updatedPlayer.segments[0];
 
     // update snake's body
-    for (let i = 1; i < player.segments.length; i++) {
+    for (let i = 1; i < this.player.segments.length; i++) {
       // translate segment
-      if (player.isBoosting) {
-        player.segments[i].x = utils.lerp(
-          player.segments[i - 1].x,
-          player.segments[i].x,
+      if (this.player.isBoosting) {
+        this.player.segments[i].x = utils.lerp(
+          this.player.segments[i - 1].x,
+          this.player.segments[i].x,
           0.45
         );
-        player.segments[i].y = utils.lerp(
-          player.segments[i - 1].y,
-          player.segments[i].y,
+        this.player.segments[i].y = utils.lerp(
+          this.player.segments[i - 1].y,
+          this.player.segments[i].y,
           0.45
         );
       } else {
-        player.segments[i].x = utils.lerp(
-          player.segments[i - 1].x,
-          player.segments[i].x,
+        this.player.segments[i].x = utils.lerp(
+          this.player.segments[i - 1].x,
+          this.player.segments[i].x,
           0.6
         );
-        player.segments[i].y = utils.lerp(
-          player.segments[i - 1].y,
-          player.segments[i].y,
+        this.player.segments[i].y = utils.lerp(
+          this.player.segments[i - 1].y,
+          this.player.segments[i].y,
           0.6
         );
       }
       // work out the snake's body part direction
-      player.segments[i].dir =
+      this.player.segments[i].dir =
         (Math.atan2(
-          player.segments[i - 1].y - player.segments[i].y,
-          player.segments[i - 1].x - player.segments[i].x
+          this.player.segments[i - 1].y - this.player.segments[i].y,
+          this.player.segments[i - 1].x - this.player.segments[i].x
         ) *
           360) /
         (Math.PI * 2);
     }
 
     // bring all snakes together
-    this.snakes = [...opponents, player];
+    this.snakes = [...opponents, this.player];
 
     this.snakes.forEach(snake => {
       this.renderer.register(snake);
     });
-  }
 
-  /**
-   * Method that retrives the curent player.
-   * @returns {object} The player's snake
-   */
-  getPlayer() {
-    return this.snakes.find(snake => {
-      return snake.id === this.socket.id;
-    });
+    // update camera
+    this.camera.zoomLevel =
+      1.15 * Math.pow(this.player.INITIAL_RADIUS / this.player.radius, 1 / 2);
+    this.camera.update();
+    this.camera.center(this.player.segments[0].x, this.player.segments[0].y);
   }
 
   createBackgroundSprite() {
@@ -260,7 +260,7 @@ export default class Game {
   createInputLoop(fps) {
     return setInterval(() => {
       this.socket.emit("client-input", {
-        player: this.getPlayer(),
+        player: this.player,
         actions: this.actions
       });
       this.clearActions();
@@ -274,12 +274,6 @@ export default class Game {
     this.actions = [];
   }
 
-  createUpdateLoop(fps) {
-    return setInterval(() => {
-      this.update();
-    }, 1000 / fps);
-  }
-
   /**
    * The main game loop.
    */
@@ -290,23 +284,10 @@ export default class Game {
     return this.frame;
   }
 
-  /**
-   * Update viewport (camera) and send input to server.
-   */
-  update() {
+  processClientInput() {
     this.then = this.now;
     this.now = Date.now();
     this.dt = (this.now - this.then) / 1000;
-
-    // this.applyServerGameState();
-
-    const player = this.getPlayer();
-
-    // update camera
-    this.camera.zoomLevel =
-      1.15 * Math.pow(player.INITIAL_RADIUS / player.radius, 1 / 2);
-    this.camera.update();
-    this.camera.center(player.segments[0].x, player.segments[0].y);
 
     // Add action to actions packet
     if (this.keyboard.keys.ArrowRight.isPressed) {
@@ -315,22 +296,17 @@ export default class Game {
     if (this.keyboard.keys.ArrowLeft.isPressed) {
       this.actions.push({ frameDuration: this.dt, command: "LEFT" });
     }
-    const boost =
-      this.keyboard.keys.Space.isPressed ||
-      this.keyboard.keys.ArrowUp.isPressed ||
-      this.mouse.buttons[0];
 
     if (
       this.keyboard.keys.Space.isPressed ||
       this.keyboard.keys.ArrowUp.isPressed ||
       this.mouse.buttons[0]
     ) {
-      !player.isBoosting &&
+      !this.player.isBoosting &&
         this.actions.push({ frameDuration: this.dt, command: "BOOST_START" });
     } else {
-      if (player.isBoosting) {
+      this.player.isBoosting &&
         this.actions.push({ frameDuration: this.dt, command: "BOOST_STOP" });
-      }
     }
   }
 
