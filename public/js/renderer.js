@@ -1,4 +1,5 @@
 import AABB from "./aabb.js";
+import * as utils from "./utils.js";
 
 export default class Renderer {
   constructor(game) {
@@ -22,6 +23,18 @@ export default class Renderer {
   register(gameObject) {
     const methods = {
       Dot: function(ctx, camera) {
+        const time = Date.now() - this.creationTime + this.randomDeltaTime;
+        const t = (Math.cos((time * Math.PI * 2) / this.blinkDuration) + 1) / 2;
+        this.r = utils.lerp(this.INITIAL_RADIUS * 0.75, this.INITIAL_RADIUS, t);
+        this.x =
+          this.INITIAL_X +
+          this.rotateRadius *
+            Math.cos((time * Math.PI * 2) / this.rotateDuration);
+        this.y =
+          this.INITIAL_Y +
+          this.rotateRadius *
+            Math.sin((time * Math.PI * 2) / this.rotateDuration);
+
         ctx.save();
         ctx.fillStyle = this.color;
         ctx.beginPath();
@@ -134,7 +147,7 @@ export default class Renderer {
     this.clearCanvases();
 
     // Render world
-    this.game.world.render(this.backgroundCtx, this.game.camera);
+    // this.game.world.render(this.backgroundCtx, this.game.camera);
 
     // Render dots
     this.game.dots.forEach(dot => {

@@ -265,7 +265,6 @@ export default class Game {
    * Apply server game state.
    */
   applyServerGameState() {
-    const serverTimestamp = this.serverGameState.timestamp;
     this.dots = this.serverGameState.dots;
     this.dots.forEach(dot => {
       this.renderer.register(dot);
