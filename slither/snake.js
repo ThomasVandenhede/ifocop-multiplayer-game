@@ -9,20 +9,21 @@ class Snake {
     this.game = game;
     this.id = id;
     this.type = this.constructor.name;
-    this.color = randomize.hsl();
-    this.isBoosting = false;
+
+    this.isDead = false;
 
     // positions
     this.x = x;
     this.y = y;
     this.segments = Array.from(
-      { length: 10 },
+      { length: 20 },
       () => new SnakeSegment(this, x, y, 0)
     );
 
     // speed
-    this.steeringSpeed = 200;
+    this.steeringSpeed = 180;
     this.speed = 50;
+    this.isBoosting = false;
 
     // size
     this.INITIAL_RADIUS = 10;

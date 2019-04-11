@@ -181,7 +181,7 @@ export default class Game {
       this.isReady = true;
       this.createBackgroundSprite();
       this.inputLoop = this.createInputLoop(4);
-      this.updateLoop = this.createUpdateLoop(30);
+      this.updateLoop = this.createUpdateLoop(60);
       this.renderLoop();
     });
   }
