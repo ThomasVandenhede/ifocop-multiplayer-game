@@ -22,13 +22,14 @@ class Game {
     //   "1234": [
     //     { frameDuration: 16, action: "LEFT" },
     //     { frameDuration: 18, action: "RIGHT" },
+    //     { frameDuration: 18, action: "SET_TARGET", data: { dir: 145 } }
     //   ]
     // }
     this.clientInput = {};
 
     // Game objects
     this.snakes = [];
-    this.dots = [...Array(500)].map(_ => {
+    this.dots = [...Array(500)].map(() => {
       const radius = 10;
       const alpha = utils.randInt(0, 360);
       const r = utils.randInt(0, this.world.r - radius);
@@ -36,7 +37,7 @@ class Game {
         this,
         Math.cos(utils.degreeToRad(alpha)) * r,
         Math.sin(utils.degreeToRad(alpha)) * r,
-        utils.randInt(5, 9)
+        utils.randInt(8, 10)
       );
     });
 
@@ -155,9 +156,8 @@ class Game {
 
     this.handleClientInput();
 
-    this.snakes.forEach(snake => {
-      snake.update(dt);
-    });
+    this.snakes.forEach(snake => snake.update(dt));
+    this.dots.forEach(dot => dot.update(dt));
 
     // notify client *in the game* about new game state
     this.io.to("game").emit("server-update", this.getGameStateAsJson());
