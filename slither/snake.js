@@ -46,6 +46,13 @@ class Snake {
     return this.segments[0];
   }
 
+  /**
+   * Simply a useful way of accessing the snake's tail.
+   */
+  get tail() {
+    return this.segments[this.segments.length - 1];
+  }
+
   // The snake forehead is the point at the front of the snake's head
   // that should NOT collide with other snakes nor leave the game area.
   get forehead() {
@@ -70,7 +77,6 @@ class Snake {
     const dot = this.game.dots[index];
     dot.destroy(this, () => {
       this.mass += dot.mass;
-      this.radius += 0.2;
       this.steering =
         (this.INITIAL_STEERING * this.INITIAL_RADIUS) / this.radius;
     });
@@ -129,6 +135,18 @@ class Snake {
     this.x = this.head.x += dx;
     this.y = this.head.y += dy;
     this.head.dir = this.dir;
+
+    // update radius
+    this.radius = this.INITIAL_RADIUS + (this.mass - this.INITIAL_MASS) * 0.1;
+
+    // update length
+    const length = Math.ceil((this.mass / this.radius) * 15);
+    console.log("TCL: Snake -> update -> length", length);
+    if (length > this.segments.length) {
+      this.segments.push({ ...this.tail });
+    } else if (length < this.segments.length) {
+      this.segments.pop();
+    }
 
     // move snake's body
     for (let i = 1; i < this.segments.length; i++) {
