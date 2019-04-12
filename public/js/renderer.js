@@ -78,7 +78,7 @@ export default class Renderer {
     gameObject.render = methods[gameObject.type].bind(gameObject);
   }
 
-  renderBoundary(ctx, camera) {
+  cropBoundary(ctx, camera) {
     ctx.save();
     ctx.globalCompositeOperation = "destination-in";
 
@@ -93,7 +93,9 @@ export default class Renderer {
     );
     ctx.fill();
     ctx.restore();
+  }
 
+  renderBoundary(ctx, camera) {
     ctx.save();
     ctx.lineWidth = camera.applyToDistance(10);
     ctx.strokeStyle = "red";
@@ -110,7 +112,9 @@ export default class Renderer {
   }
 
   clearCanvases(ctx) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
   }
 
   render() {
@@ -134,6 +138,9 @@ export default class Renderer {
 
     // Render snakes
     this.game.snakes.forEach(snake => snake.render(this.ctx, this.game.camera));
+
+    // Crop
+    this.cropBoundary(this.ctx, this.game.camera);
 
     // Render world boundary;
     this.renderBoundary(this.ctx, this.game.camera);
