@@ -47,7 +47,7 @@ export default class Game {
     // socket
     this.socket = socket;
 
-    // Player actions. A packet of actions to be sent to the websocket server.
+    // Player actions. a packet of actions to be sent to the websocket server.
     this.actions = [];
 
     // build game
@@ -102,61 +102,63 @@ export default class Game {
       this.renderer.register(dot);
     });
 
-    // update opponents
-    const opponents = gameState.snakes.filter(
-      snake => snake.id !== this.player.id
-    );
+    // // update opponents
+    // const opponents = gameState.snakes.filter(
+    //   snake => snake.id !== this.player.id
+    // );
 
-    // update only player's head
-    const updatedPlayer = gameState.snakes.find(
-      snake => snake.id === this.player.id
-    );
+    // // update only player's head
+    // const updatedPlayer = gameState.snakes.find(
+    //   snake => snake.id === this.player.id
+    // );
 
-    // update player's state
-    this.player.isBoosting = updatedPlayer.isBoosting;
-    this.player.radius = updatedPlayer.radius;
+    // // update player's state
+    // this.player.isBoosting = updatedPlayer.isBoosting;
+    // this.player.radius = updatedPlayer.radius;
 
-    // update snake's head
-    this.player.segments[0] = updatedPlayer.segments[0];
+    // // update snake's head
+    // this.player.segments[0] = updatedPlayer.segments[0];
 
-    // update snake's body
-    for (let i = 1; i < this.player.segments.length; i++) {
-      // translate segment
-      if (this.player.isBoosting) {
-        this.player.segments[i].x = utils.lerp(
-          this.player.segments[i - 1].x,
-          this.player.segments[i].x,
-          0.45
-        );
-        this.player.segments[i].y = utils.lerp(
-          this.player.segments[i - 1].y,
-          this.player.segments[i].y,
-          0.45
-        );
-      } else {
-        this.player.segments[i].x = utils.lerp(
-          this.player.segments[i - 1].x,
-          this.player.segments[i].x,
-          0.6
-        );
-        this.player.segments[i].y = utils.lerp(
-          this.player.segments[i - 1].y,
-          this.player.segments[i].y,
-          0.6
-        );
-      }
-      // work out the snake's body part direction
-      this.player.segments[i].dir =
-        (Math.atan2(
-          this.player.segments[i - 1].y - this.player.segments[i].y,
-          this.player.segments[i - 1].x - this.player.segments[i].x
-        ) *
-          360) /
-        (Math.PI * 2);
-    }
+    // // update snake's body
+    // for (let i = 1; i < this.player.segments.length; i++) {
+    //   // translate segment
+    //   if (this.player.isBoosting) {
+    //     this.player.segments[i].x = utils.lerp(
+    //       this.player.segments[i - 1].x,
+    //       this.player.segments[i].x,
+    //       0.45
+    //     );
+    //     this.player.segments[i].y = utils.lerp(
+    //       this.player.segments[i - 1].y,
+    //       this.player.segments[i].y,
+    //       0.45
+    //     );
+    //   } else {
+    //     this.player.segments[i].x = utils.lerp(
+    //       this.player.segments[i - 1].x,
+    //       this.player.segments[i].x,
+    //       0.6
+    //     );
+    //     this.player.segments[i].y = utils.lerp(
+    //       this.player.segments[i - 1].y,
+    //       this.player.segments[i].y,
+    //       0.6
+    //     );
+    //   }
+    //   // work out the snake's body part direction
+    //   this.player.segments[i].dir =
+    //     (Math.atan2(
+    //       this.player.segments[i - 1].y - this.player.segments[i].y,
+    //       this.player.segments[i - 1].x - this.player.segments[i].x
+    //     ) *
+    //       360) /
+    //     (Math.PI * 2);
+    // }
 
-    // bring all snakes together
-    this.snakes = [...opponents, this.player];
+    // // bring all snakes together
+    // this.snakes = [...opponents, this.player];
+    this.snakes = gameState.snakes;
+    this.player = this.snakes.find(snake => snake.id === this.socket.id);
 
     this.snakes.forEach(snake => {
       this.renderer.register(snake);
@@ -223,7 +225,7 @@ export default class Game {
     resources.forEach(resource => {
       const ext = resource.src.split(".")[1];
       tasks.push(
-        new Promise((resolve, reject) => {
+        new Promise(resolve => {
           if (knowExtensions.image.includes(ext)) {
             const image = new Image();
             image.src = resource.src;
@@ -247,7 +249,7 @@ export default class Game {
     ).then(() => {
       this.isReady = true;
       this.createBackgroundSprite();
-      this.inputLoop = this.createInputLoop(4);
+      this.inputLoop = this.createInputLoop(10);
       this.renderLoop();
     });
   }
@@ -260,7 +262,7 @@ export default class Game {
   createInputLoop(fps) {
     return setInterval(() => {
       this.socket.emit("client-input", {
-        player: this.player,
+        // player: this.player,
         actions: this.actions
       });
       this.clearActions();

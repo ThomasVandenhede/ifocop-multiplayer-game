@@ -8,23 +8,26 @@ class Snake {
     this.game = game;
     this.id = id;
     this.type = this.constructor.name;
+    this.color = randomize.hsl();
 
     this.isDead = false;
+
+    // body mass
+    this.mass = 100;
 
     // positions
     this.x = x;
     this.y = y;
     this.segments = Array.from({ length: 10 }, () => ({ x, y, dir: 0 }));
 
-    // speed
-    this.steeringSpeed = 180;
-    this.speed = 50;
+    // speed and acceleration
+    this.speed = this.BASE_SPEED = 150;
+    this.MAX_SPEED = 400;
+    this.steering = this.INITIAL_STEERING = 250;
     this.isBoosting = false;
 
     // size
-    this.INITIAL_RADIUS = 10;
-    this.radius = this.INITIAL_RADIUS;
-    this.radius = 20;
+    this.radius = this.INITIAL_RADIUS = 15;
 
     // direction
     // 'target' is the direction the player wants to go into
@@ -66,6 +69,7 @@ class Snake {
     ];
     // collision
     this.radius += 0.1;
+    this.steering = (this.INITIAL_STEERING * this.INITIAL_RADIUS) / this.radius;
   }
 
   dropFood() {
@@ -75,14 +79,16 @@ class Snake {
   update(dt) {
     if (this.isDead) return;
 
-    this.speed = this.isBoosting ? 400 : 200;
+    this.speed = this.isBoosting
+      ? Math.min(this.MAX_SPEED, this.speed + 800 * dt)
+      : Math.max(this.BASE_SPEED, this.speed - 800 * dt);
 
     if (this.target !== this.dir) {
       if (utils.absAngleWithin180(this.target - this.dir) < 0) {
-        this.dir -= this.steeringSpeed * dt;
+        this.dir -= this.steering * dt;
       }
       if (utils.absAngleWithin180(this.target - this.dir) > 0) {
-        this.dir += this.steeringSpeed * dt;
+        this.dir += this.steering * dt;
       }
       this.dir = utils.absAngleWithin180(this.dir);
     }
@@ -94,6 +100,42 @@ class Snake {
     this.x = this.head.x += dx;
     this.y = this.head.y += dy;
     this.head.dir = this.dir;
+
+    // move snake's body
+    for (let i = 1; i < this.segments.length; i++) {
+      // translate segment
+      if (this.isBoosting) {
+        this.segments[i].x = utils.lerp(
+          this.segments[i - 1].x,
+          this.segments[i].x,
+          0.45
+        );
+        this.segments[i].y = utils.lerp(
+          this.segments[i - 1].y,
+          this.segments[i].y,
+          0.45
+        );
+      } else {
+        this.segments[i].x = utils.lerp(
+          this.segments[i - 1].x,
+          this.segments[i].x,
+          0.6
+        );
+        this.segments[i].y = utils.lerp(
+          this.segments[i - 1].y,
+          this.segments[i].y,
+          0.6
+        );
+      }
+      // work out the snake's body part direction
+      this.segments[i].dir =
+        (Math.atan2(
+          this.segments[i - 1].y - this.segments[i].y,
+          this.segments[i - 1].x - this.segments[i].x
+        ) *
+          360) /
+        (Math.PI * 2);
+    }
 
     this.runCollisionDetection();
   }

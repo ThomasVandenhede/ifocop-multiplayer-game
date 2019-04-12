@@ -1,5 +1,4 @@
 const randomize = require("./randomize.js");
-// const Vector = require("./geometry/vector.js");
 const Circle = require("./geometry/circle.js");
 const utils = require("./utils.js");
 

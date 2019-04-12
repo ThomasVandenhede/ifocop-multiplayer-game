@@ -5,6 +5,10 @@ export default class Vector {
   }
 
   // public static methods
+  static from(vectorLike) {
+    return new Vector(vectorLike.x, vectorLike.y);
+  }
+
   static sum(...vectors) {
     const { x, y } = vectors.reduce(
       (acc, vector) => ({ x: acc.x + vector.x, y: acc.y + vector.y }),
@@ -48,7 +52,7 @@ export default class Vector {
     this.y = norm / Math.sqrt(1 + Math.pow(ratio, 2));
   }
 
-  multiplyByScalar(a) {
+  mult(a) {
     return new Vector(this.x * a, this.y * a);
   }
 

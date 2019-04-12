@@ -1,6 +1,7 @@
 import AABB from "./aabb.js";
 import * as utils from "./utils.js";
 import { PI2 } from "./constants.js";
+import Vector from "./vector.js";
 
 export default class Renderer {
   constructor(game) {
@@ -21,6 +22,7 @@ export default class Renderer {
   register(gameObject) {
     const methods = {
       Dot: function(ctx, camera) {
+        // animate dot
         const timePI2 = (Date.now() - this.creationTime) * PI2;
         const t = (Math.cos(timePI2 / this.blinkDuration) + 1) / 2;
         this.r = utils.lerp(this.INITIAL_RADIUS * 0.75, this.INITIAL_RADIUS, t);
@@ -32,6 +34,9 @@ export default class Renderer {
           this.rotateRadius * Math.sin(timePI2 / this.rotateDuration);
 
         ctx.save();
+        ctx.globalAlpha = 1;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = this.r * 3;
         ctx.fillStyle = this.color;
 
         ctx.beginPath();
@@ -42,71 +47,72 @@ export default class Renderer {
           0,
           PI2
         );
-        ctx.globalAlpha = 0.8;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = this.r * 3;
         ctx.fill();
         ctx.fill();
         ctx.restore();
       },
       Snake: function(ctx, camera) {
+        const segmentCount = this.segments.length;
+
+        // draw snake
         ctx.save();
-        const canvas = document.getElementById("snakes");
-        const m_canvas = document.createElement("canvas");
-        const m_context = m_canvas.getContext("2d");
-        const snake_bodypart_canvas = document.createElement("canvas");
-        const snake_bodypart_canvas_context = snake_bodypart_canvas.getContext(
-          "2d"
+        ctx.lineCap = ctx.lineJoin = "round";
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = camera.applyToDistance(this.radius * 2);
+        ctx.beginPath();
+        ctx.moveTo(
+          camera.applyToX(this.segments[segmentCount - 1].x),
+          camera.applyToY(this.segments[segmentCount - 1].y)
         );
-        const transformedRadius = camera.applyToDistance(this.radius);
-
-        snake_bodypart_canvas.width = window.snake.width;
-        snake_bodypart_canvas.height = window.snake.height;
-        snake_bodypart_canvas_context.drawImage(window.snake, 0, 0);
-
-        m_canvas.width = window.innerWidth;
-        m_canvas.height = window.innerHeight;
-
-        for (let i = this.segments.length - 1; i >= 0; i--) {
-          m_context.save();
+        for (let i = this.segments.length - 2; i >= 0; i--) {
           const segment = this.segments[i];
-          const boundingRect = new AABB({
-            x: segment.x - this.radius / 2,
-            y: segment.y - this.radius / 2,
-            width: this.radius,
-            height: this.radius
-          });
-
-          // rendering body part only if it's visible in viewport
-          if (boundingRect.overlaps(camera)) {
-            const transformedX = camera.applyToX(segment.x);
-            const transformedY = camera.applyToY(segment.y);
-
-            // apply segment rotation
-            m_context.translate(transformedX, transformedY);
-            m_context.rotate(utils.degToRad(segment.dir));
-
-            m_context.drawImage(
-              snake_bodypart_canvas,
-              // render i'th sprite in spritesheet
-              (i % 10) * window.snake.height,
-              0,
-              window.snake.height,
-              window.snake.height,
-              -transformedRadius,
-              -transformedRadius,
-              transformedRadius * 2,
-              transformedRadius * 2
-            );
-          }
-          m_context.restore();
+          ctx.lineTo(camera.applyToX(segment.x), camera.applyToY(segment.y));
         }
-        ctx.drawImage(m_canvas, 0, 0);
+        ctx.stroke();
+        ctx.restore();
+
+        // draw mono-eye
+        const eyeRadius = 0.8 * this.radius;
+        const irisRadius = eyeRadius * 0.7;
+        const eye = Vector.from(this.segments[0]);
+
+        ctx.save();
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.arc(
+          camera.applyToX(eye.x),
+          camera.applyToY(eye.y),
+          camera.applyToDistance(eyeRadius),
+          0,
+          PI2
+        );
+        ctx.fill();
+        ctx.restore();
+
+        // iris
+        const iris = Vector.sum(
+          eye,
+          new Vector(
+            Math.cos((this.target * PI2) / 360),
+            Math.sin((this.target * PI2) / 360)
+          ).mult(eyeRadius - irisRadius)
+        );
+
+        ctx.save();
+        ctx.fillStyle = "#333";
+        ctx.beginPath();
+        ctx.arc(
+          camera.applyToX(iris.x),
+          camera.applyToY(iris.y),
+          camera.applyToDistance(irisRadius),
+          0,
+          PI2
+        );
+        ctx.fill();
         ctx.restore();
       },
 
       World: function(ctx, camera) {
-        var canvas = document.getElementById("snakes");
         ctx.save();
         ctx.drawImage(
           window.bgCanvas,

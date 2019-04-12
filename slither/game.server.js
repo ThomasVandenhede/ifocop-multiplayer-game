@@ -71,8 +71,7 @@ class Game {
 
         // // Update snake's body based on client data
         // for (let i = 1; i < snake.segments.length; i++) {
-        //   const segment = snake.segments[i];
-        //   segment.moveTo(player.segments[i].x, player.segments[i].y);
+        //   snake.segments[i] = player.segments[i];
         // }
 
         // Organize player input by socket ID.
@@ -81,28 +80,6 @@ class Game {
           ...actions
         ];
       });
-
-      // socket.on("clientUpdate", ({ player }) => {
-      //   const snake = this.getSnakeById(socket.id);
-
-      //   // Update snake's body based on client data
-      //   for (let i = 1; i < snake.segments.length; i++) {
-      //     const segment = snake.segments[i];
-      //     segment.moveTo(player.segments[i].x, player.segments[i].y);
-      //   }
-
-      //   // Process user input
-      //   snake.isBoosting = keys.UP || keys.SPACE;
-      //   if (keys.LEFT) {
-      //     snake.dir -= (8 * snake.INITIAL_RADIUS) / snake.radius;
-      //   }
-      //   if (keys.RIGHT) {
-      //     snake.dir += (8 * snake.INITIAL_RADIUS) / snake.radius;
-      //   }
-
-      //   // Keep angle within [0, 360[ range
-      //   snake.dir = ((snake.dir % 360) + 360) % 360;
-      // });
 
       socket.on("leave game", () => {
         socket.leave("game");
@@ -150,13 +127,26 @@ class Game {
       world: this.world,
       // Avoid circular references
       snakes: this.snakes.map(snake =>
-        (({ id, segments, radius, INITIAL_RADIUS, type, isBoosting }) => ({
+        (({
           id,
           segments,
           radius,
           INITIAL_RADIUS,
           type,
-          isBoosting
+          isBoosting,
+          color,
+          target,
+          dir
+        }) => ({
+          id,
+          segments,
+          radius,
+          INITIAL_RADIUS,
+          type,
+          isBoosting,
+          color,
+          target,
+          dir
         }))(snake)
       ),
       // Same
@@ -204,10 +194,10 @@ class Game {
         this.clientInput[socketID].forEach(action => {
           const { frameDuration, command, data } = action;
           if (command === "RIGHT") {
-            player.target = player.dir += player.steeringSpeed * frameDuration;
+            player.target = player.dir += player.steering * frameDuration;
           }
           if (command === "LEFT") {
-            player.target = player.dir -= player.steeringSpeed * frameDuration;
+            player.target = player.dir -= player.steering * frameDuration;
           }
           if (command === "BOOST_START") {
             player.isBoosting = true;
