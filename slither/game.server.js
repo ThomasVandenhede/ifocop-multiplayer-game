@@ -1,3 +1,4 @@
+const randomize = require("./randomize.js");
 const GameTimer = require("./gameTimer.js").GameTimer;
 const Snake = require("./snake.js");
 const utils = require("./utils.js");
@@ -30,26 +31,25 @@ class Game {
     // Game objects
     this.snakes = [];
     this.dots = [];
-    this.MAX_DOT_COUNT = 100;
+    this.MAX_DOT_COUNT = 200;
     for (let i = 0; i < this.MAX_DOT_COUNT; i++) {
-      this.spawnDot();
+      this.spawnRandomDot();
     }
 
     this.setupSocketEvents();
   }
 
-  spawnDot() {
-    const radius = utils.randInt(8, 10);
-    const alpha = utils.randInt(0, 360);
-    const r = utils.randInt(0, this.world.r - radius * 2);
-    this.dots.push(
-      new Dot(
-        this,
-        Math.cos(utils.degToRad(alpha)) * r,
-        Math.sin(utils.degToRad(alpha)) * r,
-        radius
-      )
-    );
+  spawnRandomDot() {
+    let x, y, alpha, r;
+    let radius = utils.randInt(8, 10);
+    let color = randomize.hsl();
+
+    alpha = utils.randInt(0, 360);
+    r = utils.randInt(0, this.world.r - radius * 2);
+    x = Math.cos(utils.degToRad(alpha)) * r;
+    y = Math.sin(utils.degToRad(alpha)) * r;
+
+    this.dots.push(new Dot(this, x, y, radius, color));
   }
 
   spawnSnake(id) {

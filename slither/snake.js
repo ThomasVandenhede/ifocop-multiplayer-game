@@ -13,6 +13,10 @@ class Snake {
 
     this.isDead = false;
 
+    // drop food
+    this.lastDroppedFoodTime = Date.now();
+    this.dropFoodInterval = 300;
+
     // body mass
     this.mass = 100;
 
@@ -74,7 +78,7 @@ class Snake {
     this.color = dot.color;
 
     // add new dot
-    this.game.spawnDot();
+    this.game.spawnRandomDot();
 
     // collision
     this.radius += 0.2;
@@ -82,11 +86,23 @@ class Snake {
   }
 
   dropFood() {
-    console.log("DROP FOOD");
+    const tail = this.segments[this.segments.length - 1];
+    const x = tail.x - this.radius * Math.cos((tail.dir * Math.PI * 2) / 360);
+    const y = tail.y - this.radius * Math.sin((tail.dir * Math.PI * 2) / 360);
+    const radius = utils.randInt(8, 12);
+    this.game.dots.push(new Dot(this, x, y, radius, this.color));
   }
 
   update(dt) {
     if (this.isDead) return;
+
+    if (
+      this.isBoosting &&
+      Date.now() - this.lastDroppedFoodTime >= this.dropFoodInterval
+    ) {
+      this.dropFood();
+      this.lastDroppedFoodTime = Date.now();
+    }
 
     this.speed = this.isBoosting
       ? Math.min(this.MAX_SPEED, this.speed + 800 * dt)
