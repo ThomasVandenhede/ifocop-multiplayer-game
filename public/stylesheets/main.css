@@ -46,3 +46,19 @@ canvas {
   width: 100%;
   height: 100%;
 }
+
+.score-container {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  color: rgb(255, 255, 255);
+
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 12px;
+  overflow: hidden;
+  line-height: 150%;
+}
+
+.score-container p {
+  margin: 0;
+}

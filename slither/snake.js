@@ -18,7 +18,7 @@ class Snake {
     this.dropFoodInterval = 250;
 
     // body mass
-    this.mass = 100;
+    this.mass = this.INITIAL_MASS = 10;
 
     // positions
     this.x = x;
@@ -34,7 +34,6 @@ class Snake {
     // size
     this.radius = this.INITIAL_RADIUS = 15;
 
-    // direction
     // 'target' is the direction the player wants to go into
     // 'dir' is the actual direction of the snake
     this.target = this.dir = 0;
@@ -68,15 +67,9 @@ class Snake {
   }
 
   eatFood(index) {
-    // remove dot
-    this.game.dots[index].destroy(this, () => {
-      // // acquire dot color
-      // this.color = dot.color;
-
-      // // add new dot
-      // this.game.spawnRandomDot();
-
-      // collision
+    const dot = this.game.dots[index];
+    dot.destroy(this, () => {
+      this.mass += dot.mass;
       this.radius += 0.2;
       this.steering =
         (this.INITIAL_STEERING * this.INITIAL_RADIUS) / this.radius;
@@ -84,28 +77,42 @@ class Snake {
   }
 
   dropFood() {
+    // determine food coordinates
     const tail = this.segments[this.segments.length - 1];
     const x = tail.x - this.radius * Math.cos((tail.dir * Math.PI * 2) / 360);
     const y = tail.y - this.radius * Math.sin((tail.dir * Math.PI * 2) / 360);
-    const radius = utils.randInt(8, 12);
-    this.game.dots.push(new Dot(this.game, x, y, radius, this.color));
+
+    // add food to the world
+    const dot = new Dot(this.game, x, y, 1, this.color);
+    this.game.dots.push(dot);
+
+    // decrease mass
+    this.mass -= dot.mass;
+
+    // save timestamp
+    this.lastDroppedFoodTime = Date.now();
   }
 
   update(dt) {
     if (this.isDead) return;
 
+    // forbid boosting when player is too small
+    if (this.mass <= this.INITIAL_MASS) this.isBoosting = false;
+
+    // periodically drop food when player is boosting
     if (
       this.isBoosting &&
       Date.now() - this.lastDroppedFoodTime >= this.dropFoodInterval
     ) {
       this.dropFood();
-      this.lastDroppedFoodTime = Date.now();
     }
 
+    // accelerate or brake
     this.speed = this.isBoosting
-      ? Math.min(this.MAX_SPEED, this.speed + 800 * dt)
-      : Math.max(this.BASE_SPEED, this.speed - 800 * dt);
+      ? Math.min(this.MAX_SPEED, this.speed + 600 * dt)
+      : Math.max(this.BASE_SPEED, this.speed - 600 * dt);
 
+    // update direction (angle)
     if (this.target !== this.dir) {
       if (utils.absAngleWithin180(this.target - this.dir) < 0) {
         this.dir -= this.steering * dt;
@@ -116,10 +123,9 @@ class Snake {
       this.dir = utils.absAngleWithin180(this.dir);
     }
 
+    // move snake's head (which also happens to be the snakes location)
     const dx = Math.cos(utils.degToRad(this.dir)) * this.speed * dt;
     const dy = Math.sin(utils.degToRad(this.dir)) * this.speed * dt;
-
-    // move snake's head (which also happens to be the snakes location)
     this.x = this.head.x += dx;
     this.y = this.head.y += dy;
     this.head.dir = this.dir;
@@ -164,6 +170,18 @@ class Snake {
   }
 
   runCollisionDetection() {
+    if (
+      this.detectCollisionWithOpponents() ||
+      this.detectCollisionWithBoundary()
+    ) {
+      this.die();
+      this.dropFood();
+      return;
+    }
+    this.detectCollisionWithDots();
+  }
+
+  detectCollisionWithOpponents() {
     // find all collidable opponents
     const opponents = this.game.snakes.filter(
       snake => !snake.isDead && snake.id !== this.id
@@ -179,10 +197,16 @@ class Snake {
     );
 
     // test forehead collision with other snakes
-    const collidingSegments = allSegments.find(segment =>
+    return allSegments.find(segment =>
       segment.containsPoint(this.forehead.x, this.forehead.y)
     );
+  }
 
+  detectCollisionWithBoundary() {
+    return !this.game.world.containsPoint(this.forehead.x, this.forehead.y);
+  }
+
+  detectCollisionWithDots() {
     // test head collision with dots
     // We're removing dots while iterating, hence the revoersed
     // iteration order, to avoid missing indices.
@@ -201,18 +225,6 @@ class Snake {
       ) {
         this.eatFood(index);
       }
-    }
-
-    // test forehead collision with world boundaries
-    const outsideWorldBounds = !this.game.world.containsPoint(
-      this.forehead.x,
-      this.forehead.y
-    );
-
-    if (collidingSegments || outsideWorldBounds) {
-      this.die();
-      this.dropFood();
-      return;
     }
   }
 }

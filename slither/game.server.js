@@ -12,7 +12,7 @@ class Game {
     this.connections = {};
 
     // Game world
-    this.world = new Circle(0, 0, 1000);
+    this.world = new Circle(0, 0, 2000);
     this.world.type = "World";
 
     // Game timer
@@ -31,7 +31,7 @@ class Game {
     // Game objects
     this.snakes = [];
     this.dots = [];
-    this.MAX_DOT_COUNT = 50;
+    this.MAX_DOT_COUNT = 200;
     for (let i = 0; i < this.MAX_DOT_COUNT; i++) {
       this.spawnRandomDot();
     }
@@ -41,15 +41,14 @@ class Game {
 
   spawnRandomDot() {
     let x, y, alpha, r;
-    let radius = utils.randInt(8, 10);
     let color = randomize.hsl();
 
     alpha = utils.randInt(0, 360);
-    r = utils.randInt(0, this.world.r - radius * 2);
+    r = utils.randInt(0, this.world.r - 50);
     x = Math.cos(utils.degToRad(alpha)) * r;
     y = Math.sin(utils.degToRad(alpha)) * r;
 
-    this.dots.push(new Dot(this, x, y, radius, color));
+    this.dots.push(new Dot(this, x, y, 3, color));
   }
 
   spawnSnake(id) {

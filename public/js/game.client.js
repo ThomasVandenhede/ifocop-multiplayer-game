@@ -7,6 +7,10 @@ import Grid from "./grid.js";
 
 export default class Game {
   constructor(socket) {
+    // DOM score elements
+    this.scoreEl = document.getElementById("score");
+    this.rankEl = document.getElementById("rank");
+
     // time
     this.then = this.now = Date.now();
 
@@ -18,7 +22,7 @@ export default class Game {
 
     // renderer
     this.renderer = new Renderer(this);
-    this.grid = new Grid(50);
+    this.grid = new Grid(100);
 
     // game objects
     this.dots = [];
@@ -216,8 +220,17 @@ export default class Game {
     ).then(() => {
       this.isReady = true;
       this.createBackgroundSprite();
+      this.scoreLoop = this.createScoreLoop(1);
       this.renderLoop();
     });
+  }
+
+  createScoreLoop(fps) {
+    return setInterval(() => {
+      if (this.player) {
+        this.scoreEl.innerHTML = this.player.mass;
+      }
+    }, 1000 / fps);
   }
 
   sendClientInput() {

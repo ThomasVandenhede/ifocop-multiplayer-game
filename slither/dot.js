@@ -1,14 +1,28 @@
 const Circle = require("./geometry/circle.js");
 const utils = require("./utils.js");
 
+const getRadiusFromMass = mass => {
+  if (mass === 1) return 5;
+  if (mass === 3) return 8;
+  if (mass === 10) return 15;
+  if (mass === 50) return 20;
+};
+
 class Dot extends Circle {
-  constructor(game, x = 0, y = 0, r, color) {
-    super(x, y, r);
+  constructor(game, x = 0, y = 0, mass, color) {
+    super(x, y, getRadiusFromMass(mass));
     this.game = game;
+
+    // 1 xs; 3 s; 10 m; 50 l
+    // xs is dropped when a snake is boosting
+    // s is automatically generated
+    // m is dropped when a snake dies
+    // l is a flying dot
+    this.mass = mass;
     this.type = this.constructor.name;
-    this.INITIAL_X = x;
-    this.INITIAL_Y = y;
-    this.INITIAL_RADIUS = r;
+    this.INITIAL_X = this.x;
+    this.INITIAL_Y = this.y;
+    this.INITIAL_RADIUS = this.r;
     this.color = color;
 
     // how much food this dot is worth
