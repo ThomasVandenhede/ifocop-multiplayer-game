@@ -70,6 +70,9 @@ class Snake {
       ...this.game.dots.slice(index + 1)
     ];
 
+    // acquire dot color
+    this.color = dot.color;
+
     // add new dot
     this.game.spawnDot();
 
