@@ -36,18 +36,8 @@ body {
   height: 100vh;
 }
 
-canvas#background {
+canvas {
   background-color: #000;
-}
-
-canvas#dots,
-canvas#snakes {
-  background-color: transparent;
-}
-
-canvas#background,
-canvas#dots,
-canvas#snakes {
   position: absolute;
   top: 0;
   bottom: 0;

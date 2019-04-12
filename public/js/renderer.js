@@ -1,42 +1,18 @@
 import AABB from "./aabb.js";
-import * as utils from "./utils.js";
 import { PI2 } from "./constants.js";
-import Vector from "./vector.js";
 
 export default class Renderer {
   constructor(game) {
     this.game = game;
 
-    // Layering technique.
-    // We draw parts of the scene on different canvases.
-    this.backgroundCanvas = document.getElementById("background");
-    this.backgroundCtx = this.backgroundCanvas.getContext("2d");
-
-    this.dotsCanvas = document.getElementById("dots");
-    this.dotsCtx = this.dotsCanvas.getContext("2d");
-
-    this.snakesCanvas = document.getElementById("snakes");
-    this.snakesCtx = this.snakesCanvas.getContext("2d");
+    this.canvas = document.getElementById("canvas");
+    this.ctx = this.canvas.getContext("2d");
   }
 
   register(gameObject) {
     const methods = {
       Dot: function(ctx, camera) {
-        // animate dot
-        const timePI2 = (Date.now() - this.creationTime) * PI2;
-        const t = (Math.cos(timePI2 / this.blinkDuration) + 1) / 2;
-        this.r = utils.lerp(this.INITIAL_RADIUS * 0.75, this.INITIAL_RADIUS, t);
-        this.x =
-          this.INITIAL_X +
-          this.rotateRadius * Math.cos(timePI2 / this.rotateDuration);
-        this.y =
-          this.INITIAL_Y +
-          this.rotateRadius * Math.sin(timePI2 / this.rotateDuration);
-
         ctx.save();
-        ctx.globalAlpha = 1;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = this.r * 3;
         ctx.fillStyle = this.color;
 
         ctx.beginPath();
@@ -48,7 +24,6 @@ export default class Renderer {
           PI2
         );
         ctx.fill();
-        ctx.fill();
         ctx.restore();
       },
       Snake: function(ctx, camera) {
@@ -58,6 +33,7 @@ export default class Renderer {
         ctx.save();
         ctx.lineCap = ctx.lineJoin = "round";
         ctx.strokeStyle = this.color;
+
         ctx.lineWidth = camera.applyToDistance(this.radius * 2);
         ctx.beginPath();
         ctx.moveTo(
@@ -69,46 +45,15 @@ export default class Renderer {
           ctx.lineTo(camera.applyToX(segment.x), camera.applyToY(segment.y));
         }
         ctx.stroke();
-        ctx.restore();
+        if (this.speed > this.BASE_SPEED) {
+          const t =
+            (this.speed - this.BASE_SPEED) / (this.MAX_SPEED - this.BASE_SPEED);
 
-        // draw mono-eye
-        const eyeRadius = 0.8 * this.radius;
-        const irisRadius = eyeRadius * 0.7;
-        const eye = Vector.from(this.segments[0]);
-
-        ctx.save();
-        ctx.fillStyle = "white";
-        ctx.beginPath();
-        ctx.arc(
-          camera.applyToX(eye.x),
-          camera.applyToY(eye.y),
-          camera.applyToDistance(eyeRadius),
-          0,
-          PI2
-        );
-        ctx.fill();
-        ctx.restore();
-
-        // iris
-        const iris = Vector.sum(
-          eye,
-          new Vector(
-            Math.cos((this.target * PI2) / 360),
-            Math.sin((this.target * PI2) / 360)
-          ).mult(eyeRadius - irisRadius)
-        );
-
-        ctx.save();
-        ctx.fillStyle = "#333";
-        ctx.beginPath();
-        ctx.arc(
-          camera.applyToX(iris.x),
-          camera.applyToY(iris.y),
-          camera.applyToDistance(irisRadius),
-          0,
-          PI2
-        );
-        ctx.fill();
+          ctx.shadowBlur = camera.applyToDistance(this.radius * 4) * t;
+          ctx.shadowColor = this.color;
+          ctx.stroke();
+          ctx.stroke();
+        }
         ctx.restore();
       },
 
@@ -133,33 +78,12 @@ export default class Renderer {
     gameObject.render = methods[gameObject.type].bind(gameObject);
   }
 
-  clearCanvases() {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    // Clear all canvases
-    this.backgroundCtx.clearRect(0, 0, width, height);
-    this.dotsCtx.clearRect(0, 0, width, height);
-    this.snakesCtx.clearRect(0, 0, width, height);
+  clearCanvases(ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
   render() {
-    window.m_canvas = document.createElement("canvas");
-    window.m_canvas.width = window.background.width;
-    window.m_canvas.height = window.background.height;
-    var m_context = window.m_canvas.getContext("2d");
-    m_context.drawImage(
-      window.background,
-      0,
-      0,
-      window.background.width,
-      window.background.height
-    );
-
-    this.clearCanvases();
-
-    // Render world
-    this.game.world.render(this.backgroundCtx, this.game.camera);
+    this.clearCanvases(this.ctx);
 
     // Render dots
     this.game.dots.forEach(dot => {
@@ -170,13 +94,11 @@ export default class Renderer {
         height: dot.r * 2
       });
       if (boundingRect.overlaps(this.game.camera)) {
-        dot.render(this.dotsCtx, this.game.camera);
+        dot.render(this.ctx, this.game.camera);
       }
     });
 
     // Render snakes
-    this.game.snakes.forEach(snake =>
-      snake.render(this.snakesCtx, this.game.camera)
-    );
+    this.game.snakes.forEach(snake => snake.render(this.ctx, this.game.camera));
   }
 }

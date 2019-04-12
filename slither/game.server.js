@@ -11,7 +11,7 @@ class Game {
     this.connections = {};
 
     // Game world
-    this.world = new Circle(0, 0, 4000);
+    this.world = new Circle(0, 0, 500);
     this.world.type = "World";
 
     // Game timer
@@ -29,19 +29,31 @@ class Game {
 
     // Game objects
     this.snakes = [];
-    this.dots = [...Array(200)].map(() => {
-      const radius = 10;
-      const alpha = utils.randInt(0, 360);
-      const r = utils.randInt(0, this.world.r - radius);
-      return new Dot(
+    this.dots = [];
+    this.MAX_DOT_COUNT = 100;
+    for (let i = 0; i < this.MAX_DOT_COUNT; i++) {
+      this.spawnDot();
+    }
+
+    this.setupSocketEvents();
+  }
+
+  spawnDot() {
+    const radius = utils.randInt(8, 10);
+    const alpha = utils.randInt(0, 360);
+    const r = utils.randInt(0, this.world.r - radius * 2);
+    this.dots.push(
+      new Dot(
         this,
         Math.cos(utils.degToRad(alpha)) * r,
         Math.sin(utils.degToRad(alpha)) * r,
-        utils.randInt(8, 10)
-      );
-    });
+        radius
+      )
+    );
+  }
 
-    this.setupSocketEvents();
+  spawnSnake(id) {
+    this.snakes.push(new Snake(this, id));
   }
 
   getSnakeById(id) {
@@ -59,7 +71,7 @@ class Game {
 
       socket.on("join game", () => {
         // Add new snake
-        this.snakes.push(new Snake(this, socket.id));
+        this.spawnSnake(socket.id);
 
         // Notify all clients about the new connection
         socket.emit("startGameClient", this.getGameStateAsJSON());
@@ -100,56 +112,9 @@ class Game {
 
   getGameStateAsJSON() {
     const gameState = {
-      world: this.world,
-      // Avoid circular references
-      snakes: this.snakes,
-      // Same
-      dots: this.dots
-    };
-
-    // Avoid circular references
-    return JSON.stringify(gameState, (key, value) => {
-      if (key === "game") {
-        // omit game reference from within snakes
-        return undefined;
-      } else if (key === "snake") {
-        // omit snake reference from within snake segments
-        return undefined;
-      } else {
-        return value;
-      }
-    });
-  }
-
-  getUpdatedGameStateAsJSON() {
-    const gameState = {
       timestamp: Date.now(),
       world: this.world,
-      // Avoid circular references
-      snakes: this.snakes.map(snake =>
-        (({
-          id,
-          segments,
-          radius,
-          INITIAL_RADIUS,
-          type,
-          isBoosting,
-          color,
-          target,
-          dir
-        }) => ({
-          id,
-          segments,
-          radius,
-          INITIAL_RADIUS,
-          type,
-          isBoosting,
-          color,
-          target,
-          dir
-        }))(snake)
-      ),
-      // Same
+      snakes: this.snakes,
       dots: this.dots
     };
 
@@ -180,8 +145,8 @@ class Game {
 
     this.snakes.forEach(snake => snake.update(dt));
 
-    // notify client *in the game* about new game state
-    this.io.to("game").emit("server-update", this.getUpdatedGameStateAsJSON());
+    // notify client in the game about new game state
+    this.io.to("game").emit("server-update", this.getGameStateAsJSON());
   }
 
   /**
@@ -214,9 +179,6 @@ class Game {
     this.emptyClientInput();
   }
 
-  /**
-   * Empty client input array.
-   */
   emptyClientInput() {
     this.clientInput = {};
   }

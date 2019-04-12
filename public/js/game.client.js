@@ -2,7 +2,6 @@ import Camera from "./camera.js";
 import Keyboard from "./keyboard/Keyboard.js";
 import Mouse from "./Mouse.js";
 import Renderer from "./renderer.js";
-import * as utils from "./utils.js";
 import { PI2 } from "./constants.js";
 
 export default class Game {
@@ -14,7 +13,7 @@ export default class Game {
     this.isReady = false;
 
     // canvas
-    this.canvas = document.getElementById("snakes");
+    this.canvas = document.getElementById("canvas");
 
     // renderer
     this.renderer = new Renderer(this);
@@ -121,45 +120,6 @@ export default class Game {
     // this.player.isBoosting = updatedPlayer.isBoosting;
     // this.player.radius = updatedPlayer.radius;
 
-    // // update snake's head
-    // this.player.segments[0] = updatedPlayer.segments[0];
-
-    // // update snake's body
-    // for (let i = 1; i < this.player.segments.length; i++) {
-    //   // translate segment
-    //   if (this.player.isBoosting) {
-    //     this.player.segments[i].x = utils.lerp(
-    //       this.player.segments[i - 1].x,
-    //       this.player.segments[i].x,
-    //       0.45
-    //     );
-    //     this.player.segments[i].y = utils.lerp(
-    //       this.player.segments[i - 1].y,
-    //       this.player.segments[i].y,
-    //       0.45
-    //     );
-    //   } else {
-    //     this.player.segments[i].x = utils.lerp(
-    //       this.player.segments[i - 1].x,
-    //       this.player.segments[i].x,
-    //       0.6
-    //     );
-    //     this.player.segments[i].y = utils.lerp(
-    //       this.player.segments[i - 1].y,
-    //       this.player.segments[i].y,
-    //       0.6
-    //     );
-    //   }
-    //   // work out the snake's body part direction
-    //   this.player.segments[i].dir =
-    //     (Math.atan2(
-    //       this.player.segments[i - 1].y - this.player.segments[i].y,
-    //       this.player.segments[i - 1].x - this.player.segments[i].x
-    //     ) *
-    //       360) /
-    //     (Math.PI * 2);
-    // }
-
     // // bring all snakes together
     // this.snakes = [...opponents, this.player];
     this.snakes = gameState.snakes;
@@ -254,19 +214,9 @@ export default class Game {
     ).then(() => {
       this.isReady = true;
       this.createBackgroundSprite();
-      // this.inputLoop = this.createInputLoop(60);
       this.renderLoop();
     });
   }
-
-  // /**
-  //  * Create a loop that perdiodically sends input packets to the websocket server.
-  //  * @param {number} fps - The loop framerate
-  //  * @returns {number} The interval ID
-  //  */
-  // createInputLoop(fps) {
-  //   return setInterval(this.sendClientInput.bind(this), 1000 / fps);
-  // }
 
   sendClientInput() {
     if (
@@ -297,7 +247,13 @@ export default class Game {
     this.frame = requestAnimationFrame(this.renderLoop.bind(this));
     // notify server about input devices
     this.render();
-    return this.frame;
+  }
+
+  /**
+   * Draw to the canvas.
+   */
+  render() {
+    this.renderer.render();
   }
 
   processClientInput() {
@@ -325,12 +281,5 @@ export default class Game {
         this.actions.push({ frameDuration: this.dt, command: "BOOST_STOP" });
     }
     this.sendClientInput();
-  }
-
-  /**
-   * Draw to the canvas.
-   */
-  render() {
-    this.renderer.render();
   }
 }

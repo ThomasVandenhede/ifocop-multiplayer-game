@@ -2,6 +2,7 @@ const randomize = require("./randomize");
 const Vector = require("./geometry/vector");
 const Circle = require("./geometry/circle");
 const utils = require("./utils");
+const Dot = require("./dot");
 
 class Snake {
   constructor(game, id, x = 0, y = 0) {
@@ -63,12 +64,17 @@ class Snake {
   }
 
   eatFood(dot, index) {
+    // remove dot
     this.game.dots = [
       ...this.game.dots.slice(0, index),
       ...this.game.dots.slice(index + 1)
     ];
+
+    // add new dot
+    this.game.spawnDot();
+
     // collision
-    this.radius += 0.1;
+    this.radius += 0.2;
     this.steering = (this.INITIAL_STEERING * this.INITIAL_RADIUS) / this.radius;
   }
 
