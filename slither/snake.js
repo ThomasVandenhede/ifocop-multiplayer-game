@@ -15,7 +15,7 @@ class Snake {
 
     // drop food
     this.lastDroppedFoodTime = Date.now();
-    this.dropFoodInterval = 300;
+    this.dropFoodInterval = 250;
 
     // body mass
     this.mass = 100;
@@ -67,22 +67,20 @@ class Snake {
     this.game.io.to(`${this.id}`).emit("gameOver");
   }
 
-  eatFood(dot, index) {
+  eatFood(index) {
     // remove dot
-    this.game.dots = [
-      ...this.game.dots.slice(0, index),
-      ...this.game.dots.slice(index + 1)
-    ];
+    this.game.dots[index].destroy(this, () => {
+      // // acquire dot color
+      // this.color = dot.color;
 
-    // acquire dot color
-    this.color = dot.color;
+      // // add new dot
+      // this.game.spawnRandomDot();
 
-    // add new dot
-    this.game.spawnRandomDot();
-
-    // collision
-    this.radius += 0.2;
-    this.steering = (this.INITIAL_STEERING * this.INITIAL_RADIUS) / this.radius;
+      // collision
+      this.radius += 0.2;
+      this.steering =
+        (this.INITIAL_STEERING * this.INITIAL_RADIUS) / this.radius;
+    });
   }
 
   dropFood() {
@@ -90,7 +88,7 @@ class Snake {
     const x = tail.x - this.radius * Math.cos((tail.dir * Math.PI * 2) / 360);
     const y = tail.y - this.radius * Math.sin((tail.dir * Math.PI * 2) / 360);
     const radius = utils.randInt(8, 12);
-    this.game.dots.push(new Dot(this, x, y, radius, this.color));
+    this.game.dots.push(new Dot(this.game, x, y, radius, this.color));
   }
 
   update(dt) {
@@ -186,16 +184,22 @@ class Snake {
     );
 
     // test head collision with dots
-    for (let index = 0; index < this.game.dots.length; ) {
+    // We're removing dots while iterating, hence the revoersed
+    // iteration order, to avoid missing indices.
+    const dirRad = (this.dir * Math.PI * 2) / 360;
+    const suckRadius = 1.75 * this.radius;
+    const suckCircle = new Circle(
+      this.x + (suckRadius - this.radius) * Math.cos(dirRad),
+      this.y + (suckRadius - this.radius) * Math.sin(dirRad),
+      suckRadius
+    );
+    for (let index = this.game.dots.length - 1; index >= 0; index--) {
       const dot = this.game.dots[index];
-      const head = new Circle(this.head.x, this.head.y, this.radius);
       if (
-        Math.pow(dot.x - head.x, 2) + Math.pow(dot.y - head.y, 2) <
-        Math.pow(head.r + dot.r, 2)
+        Math.pow(dot.x - suckCircle.x, 2) + Math.pow(dot.y - suckCircle.y, 2) <
+        Math.pow(suckCircle.r + dot.r, 2)
       ) {
-        this.eatFood(dot, index);
-      } else {
-        index++;
+        this.eatFood(index);
       }
     }
 
@@ -206,7 +210,6 @@ class Snake {
     );
 
     if (collidingSegments || outsideWorldBounds) {
-      console.log("DEAD");
       this.die();
       this.dropFood();
       return;

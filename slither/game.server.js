@@ -31,7 +31,7 @@ class Game {
     // Game objects
     this.snakes = [];
     this.dots = [];
-    this.MAX_DOT_COUNT = 200;
+    this.MAX_DOT_COUNT = 50;
     for (let i = 0; i < this.MAX_DOT_COUNT; i++) {
       this.spawnRandomDot();
     }
@@ -144,6 +144,7 @@ class Game {
     this.handleClientInput();
 
     this.snakes.forEach(snake => snake.update(dt));
+    this.dots.forEach(dot => dot.update(dt));
 
     // notify client in the game about new game state
     this.io.to("game").emit("server-update", this.getGameStateAsJSON());
