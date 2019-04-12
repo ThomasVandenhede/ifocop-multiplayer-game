@@ -78,12 +78,46 @@ export default class Renderer {
     gameObject.render = methods[gameObject.type].bind(gameObject);
   }
 
+  renderBoundary(ctx, camera) {
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-in";
+
+    // crop hexagons to circle
+    ctx.beginPath();
+    ctx.arc(
+      camera.applyToX(this.game.world.x),
+      camera.applyToY(this.game.world.y),
+      camera.applyToDistance(this.game.world.r),
+      0,
+      PI2
+    );
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.lineWidth = camera.applyToDistance(10);
+    ctx.strokeStyle = "red";
+    ctx.beginPath();
+    ctx.arc(
+      camera.applyToX(this.game.world.x),
+      camera.applyToY(this.game.world.y),
+      camera.applyToDistance(this.game.world.r),
+      0,
+      PI2
+    );
+    ctx.stroke();
+    ctx.restore();
+  }
+
   clearCanvases(ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
   render() {
     this.clearCanvases(this.ctx);
+
+    // Render grid
+    this.game.grid.draw(this.ctx, this.game.camera);
 
     // Render dots
     this.game.dots.forEach(dot => {
@@ -100,5 +134,8 @@ export default class Renderer {
 
     // Render snakes
     this.game.snakes.forEach(snake => snake.render(this.ctx, this.game.camera));
+
+    // Render world boundary;
+    this.renderBoundary(this.ctx, this.game.camera);
   }
 }

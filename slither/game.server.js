@@ -11,7 +11,7 @@ class Game {
     this.connections = {};
 
     // Game world
-    this.world = new Circle(0, 0, 500);
+    this.world = new Circle(0, 0, 1000);
     this.world.type = "World";
 
     // Game timer

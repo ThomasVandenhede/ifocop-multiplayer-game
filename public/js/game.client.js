@@ -3,6 +3,7 @@ import Keyboard from "./keyboard/Keyboard.js";
 import Mouse from "./Mouse.js";
 import Renderer from "./renderer.js";
 import { PI2 } from "./constants.js";
+import Grid from "./grid.js";
 
 export default class Game {
   constructor(socket) {
@@ -17,6 +18,7 @@ export default class Game {
 
     // renderer
     this.renderer = new Renderer(this);
+    this.grid = new Grid(50);
 
     // game objects
     this.dots = [];
