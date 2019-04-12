@@ -28,6 +28,10 @@ export default class Game {
     this.keyboard = new Keyboard();
     this.mouse = new Mouse({ element: this.canvas, callbackContext: this });
 
+    // input messages
+    this.lastInputMessageTime = Date.now();
+    this.inputMessageInterval = 250; // ms
+
     this.mouse.mouseMoveCallback = function() {
       const mouseCenterOffsetX = this.mouse.x - this.canvas.width / 2;
       const mouseCenterOffsetY = this.mouse.y - this.canvas.height / 2;
@@ -39,6 +43,7 @@ export default class Game {
         command: "SET_TARGET",
         data: { dir }
       });
+      this.sendClientInput();
     };
 
     // camera
@@ -249,24 +254,33 @@ export default class Game {
     ).then(() => {
       this.isReady = true;
       this.createBackgroundSprite();
-      this.inputLoop = this.createInputLoop(10);
+      // this.inputLoop = this.createInputLoop(60);
       this.renderLoop();
     });
   }
 
-  /**
-   * Create a loop that perdiodically sends input packets to the websocket server.
-   * @param {number} fps - The loop framerate
-   * @returns {number} The interval ID
-   */
-  createInputLoop(fps) {
-    return setInterval(() => {
+  // /**
+  //  * Create a loop that perdiodically sends input packets to the websocket server.
+  //  * @param {number} fps - The loop framerate
+  //  * @returns {number} The interval ID
+  //  */
+  // createInputLoop(fps) {
+  //   return setInterval(this.sendClientInput.bind(this), 1000 / fps);
+  // }
+
+  sendClientInput() {
+    if (
+      this.actions &&
+      this.actions.length &&
+      Date.now() - this.lastInputMessageTime >= this.inputMessageInterval
+    ) {
       this.socket.emit("client-input", {
         // player: this.player,
         actions: this.actions
       });
       this.clearActions();
-    }, 1000 / fps);
+      this.lastInputMessageTime = Date.now();
+    }
   }
 
   /**
@@ -310,6 +324,7 @@ export default class Game {
       this.player.isBoosting &&
         this.actions.push({ frameDuration: this.dt, command: "BOOST_STOP" });
     }
+    this.sendClientInput();
   }
 
   /**
