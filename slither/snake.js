@@ -141,7 +141,6 @@ class Snake {
 
     // update length
     const length = Math.ceil((this.mass / this.radius) * 15);
-    console.log("TCL: Snake -> update -> length", length);
     if (length > this.segments.length) {
       this.segments.push({ ...this.tail });
     } else if (length < this.segments.length) {

@@ -7,6 +7,11 @@ export default class Renderer {
 
     this.canvas = document.getElementById("canvas");
     this.ctx = this.canvas.getContext("2d");
+
+    this.pre = document.createElement("canvas");
+    this.pre.width = this.canvas.width;
+    this.pre.height = this.canvas.height;
+    this.preCtx = this.pre.getContext("2d");
   }
 
   register(gameObject) {
@@ -111,17 +116,16 @@ export default class Renderer {
     ctx.restore();
   }
 
-  clearCanvases(ctx) {
-    ctx.save();
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
+  clearCanvases() {
+    this.preCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
   render() {
-    this.clearCanvases(this.ctx);
+    this.clearCanvases();
 
     // Render grid
-    this.game.grid.draw(this.ctx, this.game.camera);
+    this.game.grid.draw(this.preCtx, this.game.camera);
 
     // Render dots
     this.game.dots.forEach(dot => {
@@ -132,17 +136,22 @@ export default class Renderer {
         height: dot.r * 2
       });
       if (boundingRect.overlaps(this.game.camera)) {
-        dot.render(this.ctx, this.game.camera);
+        dot.render(this.preCtx, this.game.camera);
       }
     });
 
     // Render snakes
-    this.game.snakes.forEach(snake => snake.render(this.ctx, this.game.camera));
+    this.game.snakes.forEach(snake =>
+      snake.render(this.preCtx, this.game.camera)
+    );
 
     // Crop
-    this.cropBoundary(this.ctx, this.game.camera);
+    this.cropBoundary(this.preCtx, this.game.camera);
 
-    // Render world boundary;
-    this.renderBoundary(this.ctx, this.game.camera);
+    // Render world boundary
+    this.renderBoundary(this.preCtx, this.game.camera);
+
+    // Render our off-screen canvas to the visible canvas.
+    this.ctx.drawImage(this.pre, 0, 0);
   }
 }
