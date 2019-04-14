@@ -70,7 +70,7 @@ class Snake {
 
   die() {
     this.isDead = true;
-    this.game.io.to(`${this.id}`).emit("gameOver");
+    this.game.handleGameOver(this.id);
   }
 
   eatFood(index) {
@@ -82,6 +82,9 @@ class Snake {
     });
   }
 
+  /**
+   * Drop one piece of food from the snake's tail.
+   */
   dropFood() {
     // determine food coordinates
     const tail = this.segments[this.segments.length - 1];
@@ -97,6 +100,20 @@ class Snake {
 
     // save timestamp
     this.lastDroppedFoodTime = Date.now();
+  }
+
+  /**
+   * Convert body mass to food and drop that food at random locations along the body.
+   */
+  dropAllFood() {
+    console.log("dropping food");
+    for (let i = 0; i < this.segments.length - 1; i++) {
+      const segment = this.segments[i];
+      const x = segment.x;
+      const y = segment.y;
+      // some mass is lost along the way (maybe?)
+      const segmentMass = (this.mass - (this.mass % 10)) / this.segments.length;
+    }
   }
 
   update(dt) {
@@ -187,12 +204,14 @@ class Snake {
   }
 
   runCollisionDetection() {
+    if (this.isDead) return;
+
     if (
       this.detectCollisionWithOpponents() ||
       this.detectCollisionWithBoundary()
     ) {
       this.die();
-      this.dropFood();
+      this.dropAllFood();
       return;
     }
     this.detectCollisionWithDots();

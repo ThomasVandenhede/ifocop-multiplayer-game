@@ -14,9 +14,6 @@ export default class Game {
     // time
     this.then = this.now = Date.now();
 
-    // Boolean, is true when the player has entered the game.
-    this.isReady = false;
-
     // canvas
     this.canvas = document.getElementById("canvas");
 
@@ -32,11 +29,6 @@ export default class Game {
     // input management
     this.keyboard = new Keyboard();
     this.mouse = new Mouse({ element: this.canvas, callbackContext: this });
-
-    // input messages
-    this.lastInputMessageTime = Date.now();
-    this.inputMessageInterval = 250; // ms
-
     this.mouse.mouseMoveCallback = function() {
       const mouseCenterOffsetX = this.mouse.x - this.canvas.width / 2;
       const mouseCenterOffsetY = this.mouse.y - this.canvas.height / 2;
@@ -51,6 +43,17 @@ export default class Game {
       this.sendClientInput();
     };
 
+    // input messages
+    this.lastInputMessageTime = Date.now();
+    this.inputMessageInterval = 250; // ms
+
+    // is a transition running?
+    this.transitionRunning = false;
+
+    // has the player requested to join the game?
+    this.joinRequested = false;
+    this.inGame = false;
+
     // camera
     this.camera = new Camera({ canvas: this.canvas });
 
@@ -61,7 +64,10 @@ export default class Game {
     this.actions = [];
 
     // build game
-    this.socket.on("startGameClient", json => {
+    this.socket.on("server-start-game", json => {
+      this.joinRequested = false;
+      this.inGame = true;
+
       const gameState = JSON.parse(json);
       const { snakes, dots, world } = gameState;
       // build game
@@ -82,14 +88,39 @@ export default class Game {
         this.renderer.register(snake);
       });
 
-      this.start();
+      this.create();
     });
 
-    this.socket.on("game over", () => {
-      const loginEl = document.getElementById("login");
+    this.socket.on("server-game-over", () => {
+      const menuContainer = document.getElementById("menu-container");
 
-      this.socket.emit("leave game");
-      loginEl.classList.remove("fade-out");
+      window.ontransitionend = () => {
+        const gameContainer = document.getElementById("game-container");
+        gameContainer.style.dislay = "none";
+
+        // stop game
+        this.stop();
+        // ask server to get unsubscribe us from game updates
+        this.socket.emit("client-leave-game");
+        // prevent calling this event listener again
+        window.ontransitionend = null;
+
+        this.transitionRunning = false;
+        this.inGame = false;
+
+        // defer joining game until after all transitions have finished.
+        if (this.joinRequested) {
+          this.join();
+        }
+      };
+
+      // trigger transition
+      menuContainer.style.display = "block";
+      setTimeout(() => {
+        menuContainer.classList.remove("fade-out");
+        window.animatedBackground.start();
+        this.transitionRunning = true;
+      }, 10);
     });
 
     // Server has updated the game state:
@@ -98,8 +129,37 @@ export default class Game {
     // - potential collisions
     this.socket.on("server-update", gameStateJSON => {
       this.processServerUpdate(JSON.parse(gameStateJSON));
-      this.processClientInput();
+      this.getPlayer() && this.processClientInput();
     });
+  }
+
+  requestJoin() {
+    // do not allow requesting twice!
+    if (this.joinRequested || this.inGame) return;
+
+    //
+    this.joinRequested = true;
+    if (!this.transitionRunning) {
+      this.join();
+    }
+  }
+
+  join() {
+    this.joinRequested = false;
+    const menuContainer = document.getElementById("menu-container");
+    const gameContainer = document.getElementById("game-container");
+    window.ontransitionend = () => {
+      menuContainer.style.display = "none";
+      window.ontransitionend = null;
+    };
+    menuContainer.classList.add("fade-out");
+
+    gameContainer.style.display = "block";
+    this.socket.emit("client-join-game");
+  }
+
+  getPlayer() {
+    return this.snakes.find(snake => snake.id === this.socket.id);
   }
 
   /**
@@ -131,6 +191,8 @@ export default class Game {
     this.snakes = gameState.snakes;
     this.player = this.snakes.find(snake => snake.id === this.socket.id);
 
+    if (!this.player) return;
+
     this.snakes.forEach(snake => {
       this.renderer.register(snake);
     });
@@ -140,50 +202,6 @@ export default class Game {
       1.15 * Math.pow(this.player.INITIAL_RADIUS / this.player.radius, 1 / 2);
     this.camera.update();
     this.camera.center(this.player.segments[0].x, this.player.segments[0].y);
-  }
-
-  createBackgroundSprite() {
-    const bgCanvas = document.createElement("canvas");
-    bgCanvas.width = this.world.r * 2;
-    bgCanvas.height = this.world.r * 2;
-    const bgCtx = bgCanvas.getContext("2d");
-    const {
-      width: backgroundWidth,
-      height: backgroundHeight
-    } = window.background;
-
-    bgCtx.save();
-
-    // draw hexagons
-    for (let x = 0; x < this.world.r * 2; x += backgroundWidth) {
-      for (let y = 0; y < this.world.r * 2; y += backgroundHeight) {
-        bgCtx.drawImage(
-          window.background,
-          x,
-          y,
-          backgroundWidth,
-          backgroundHeight
-        );
-      }
-    }
-    bgCtx.globalCompositeOperation = "destination-in";
-
-    // crop hexagons to circle
-    bgCtx.beginPath();
-    bgCtx.arc(this.world.r, this.world.r, this.world.r, 0, PI2);
-    bgCtx.fill();
-    bgCtx.restore();
-
-    // draw outer border
-    bgCtx.save();
-    bgCtx.strokeStyle = "#7E0000";
-    bgCtx.lineWidth = 10;
-    bgCtx.beginPath();
-    bgCtx.arc(this.world.r, this.world.r, this.world.r, 0, PI2);
-    bgCtx.stroke();
-    bgCtx.restore();
-
-    window.bgCanvas = bgCanvas;
   }
 
   preload(...resources) {
@@ -212,25 +230,33 @@ export default class Game {
     return Promise.all(tasks);
   }
 
-  start() {
+  create() {
     this.preloading = true;
     this.preload(
       { src: "/images/snake-body2.png", name: "snake" },
       { src: "/images/bg54.jpg", name: "background" }
     ).then(() => {
-      this.isReady = true;
-      this.createBackgroundSprite();
-      this.scoreLoop = this.createScoreLoop(1);
-      this.renderLoop();
+      this.start();
     });
   }
 
+  start() {
+    this.scoreLoop = this.createScoreLoop(1);
+    this.renderLoop = this.createRenderLoop();
+  }
+
   createScoreLoop(fps) {
-    return setInterval(() => {
+    const intervalID = setInterval(() => {
       if (this.player) {
         this.scoreEl.innerHTML = this.player.mass;
       }
     }, 1000 / fps);
+
+    return {
+      stop: () => {
+        clearInterval(intervalID);
+      }
+    };
   }
 
   sendClientInput() {
@@ -258,10 +284,19 @@ export default class Game {
   /**
    * The main game loop.
    */
-  renderLoop() {
-    this.frame = requestAnimationFrame(this.renderLoop.bind(this));
-    // notify server about input devices
-    this.render();
+  createRenderLoop() {
+    const renderLoop = () => {
+      this.frame = requestAnimationFrame(renderLoop);
+      // notify server about input devices
+      this.render();
+    };
+    renderLoop();
+
+    return {
+      stop: () => {
+        cancelAnimationFrame(this.frame);
+      }
+    };
   }
 
   /**
@@ -296,5 +331,13 @@ export default class Game {
         this.actions.push({ frameDuration: this.dt, command: "BOOST_STOP" });
     }
     this.sendClientInput();
+  }
+
+  stop() {
+    // stop render loop
+    this.renderLoop.stop();
+
+    // stop score loop
+    this.scoreLoop.stop();
   }
 }

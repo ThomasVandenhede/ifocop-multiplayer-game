@@ -13,7 +13,7 @@ function Keyboard(game) {
   this.bindEventHandlers();
 }
 
-Keyboard.prototype.handleKeydown = function handleKeydown(event) {
+Keyboard.prototype.handleKeydown = function(event) {
   var key = this.keys[event.code];
   if (!key.isEnabled) return;
 
@@ -33,7 +33,7 @@ Keyboard.prototype.handleKeydown = function handleKeydown(event) {
   key.onDown.call(this.game);
 };
 
-Keyboard.prototype.handleKeyup = function handleKeyup(event) {
+Keyboard.prototype.handleKeyup = function(event) {
   var key = this.keys[event.code];
   if (!key.isEnabled) return;
 

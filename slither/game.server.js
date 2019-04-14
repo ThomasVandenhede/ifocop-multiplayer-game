@@ -4,6 +4,8 @@ const Snake = require("./snake.js");
 const utils = require("./utils.js");
 const Circle = require("./geometry/circle.js");
 const Dot = require("./dot.js");
+const mongodb = require("mongodb");
+const db = require("../db.js");
 
 class Game {
   constructor(io) {
@@ -12,7 +14,7 @@ class Game {
     this.connections = {};
 
     // Game world
-    this.world = new Circle(0, 0, 2000);
+    this.world = new Circle(0, 0, 4000);
     this.world.type = "World";
 
     // Game timer
@@ -31,7 +33,7 @@ class Game {
     // Game objects
     this.snakes = [];
     this.dots = [];
-    this.MAX_DOT_COUNT = 200;
+    this.MAX_DOT_COUNT = 500;
     for (let i = 0; i < this.MAX_DOT_COUNT; i++) {
       this.spawnRandomDot();
     }
@@ -59,6 +61,10 @@ class Game {
     return this.snakes.find(snake => snake.id === id);
   }
 
+  removePlayer(id) {
+    this.snakes = this.snakes.filter(snake => snake.id !== id);
+  }
+
   setupSocketEvents() {
     this.io.on("connection", socket => {
       console.log("new connection: ", socket.id);
@@ -68,23 +74,16 @@ class Game {
         socket
       };
 
-      socket.on("join game", () => {
+      socket.on("client-join-game", () => {
         // Add new snake
         this.spawnSnake(socket.id);
 
         // Notify all clients about the new connection
-        socket.emit("startGameClient", this.getGameStateAsJSON());
         socket.join("game");
+        socket.emit("server-start-game", this.getGameStateAsJSON());
       });
 
       socket.on("client-input", ({ player, actions }) => {
-        // const snake = this.getSnakeById(socket.id);
-
-        // // Update snake's body based on client data
-        // for (let i = 1; i < snake.segments.length; i++) {
-        //   snake.segments[i] = player.segments[i];
-        // }
-
         // Organize player input by socket ID.
         this.clientInput[socket.id] = [
           ...(this.clientInput[socket.id] || []),
@@ -92,16 +91,18 @@ class Game {
         ];
       });
 
-      socket.on("leave game", () => {
+      socket.on("client-leave-game", () => {
+        // finally leave game
         socket.leave("game");
+        console.log(`player ${socket.id} has left the game`);
       });
 
       socket.on("disconnect", () => {
-        // Delete snake
-        this.snakes = this.snakes.filter(snake => snake.id !== socket.id);
-
         // Delete connection
         delete this.connections[socket.id];
+
+        // Delete snake
+        this.removePlayer(socket.id);
 
         // Notify client
         this.io.emit("clientDisconnect", socket.id);
@@ -113,7 +114,7 @@ class Game {
     const gameState = {
       timestamp: Date.now(),
       world: this.world,
-      snakes: this.snakes,
+      snakes: this.snakes.filter(snake => !snake.isDead),
       dots: this.dots
     };
 
@@ -177,6 +178,43 @@ class Game {
       }
     }
     this.emptyClientInput();
+  }
+
+  handleGameOver(id) {
+    console.log("game over");
+    const socket = this.io.sockets.connected[id];
+
+    if (socket && socket.handshake.session) {
+      const { userID } = socket.handshake.session;
+      const dbClient = db.get("slither");
+      const usersCollection = dbClient.collection("users");
+      const player = this.getSnakeById(socket.id);
+
+      // update player's best score and max number of kills
+      usersCollection
+        .findOne({ _id: new mongodb.ObjectID(userID) })
+        .then(user => {
+          if (user) {
+            if (!user.max_score || user.max_score < player.mass)
+              usersCollection.updateOne(
+                {
+                  _id: new mongodb.ObjectID(userID)
+                },
+                {
+                  $set: {
+                    max_score: player.mass
+                  }
+                }
+              );
+          }
+          console.log("player score saved");
+
+          // remove player
+          this.removePlayer(socket.id);
+
+          socket.emit("server-game-over");
+        });
+    }
   }
 
   emptyClientInput() {

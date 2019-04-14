@@ -1,0 +1,77 @@
+doctype html
+html(lang='fr')
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='X-UA-Compatible', content='IE=edge')
+    title FakeSlither.io
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    link(rel='stylesheet', href='/stylesheets/main.css')
+  body
+    main
+      #menu-container
+        if user
+            #play-menu
+              button#logoutButton.btn.btn--danger Déconnexion
+              ul.nav__list
+                li.nav__item
+                  button#playButton.btn.btn--big.btn--success Jouer
+        else
+          #login-menu
+            ul.nav__list
+              li.nav__item
+                button#loginButton.btn.btn--big.btn--success Connexion
+              li.nav__item
+                button#signupButton.btn.btn--big.btn--success Inscription
+
+      if user
+        #game-container
+          canvas#canvas
+          #score-container.score-container
+            p
+              span Ton score : 
+              strong#score
+            p
+              span Ton rang : 
+              strong#rank
+
+    #loginModal.modal
+      // Modal content
+      .modal-content
+        span.close ×
+        form#loginForm.form
+          p
+            label(for='username') Identifiant
+            input(type='text', name='username', required='')
+          p#username-error.error-message
+            | Cet identifiant n'existe pas
+          p
+            label(for='password') Mot de passe
+            input(type='password', name='password', required='')
+          p#password-error.error-message
+            | Mot de passe incorrect
+          p
+            button.btn.btn--success Se connecter
+
+    #signupModal.modal
+      // Modal content
+      .modal-content
+        span.close ×
+        form#signupForm.form
+          p
+            label(for='username') Pseudo
+            input(type='text', name='username', required='')
+          p
+            label(for='password') Mot de passe
+            input(type='password', name='password', required='')
+          p#username-signup-error.error-message
+            | Identifiant déjà pris
+          p#email-signup-error.error-message
+            | Identifiant déjà pris
+          p
+            button.btn.btn--success Créer compte
+
+    script(src='https://unpkg.com/axios/dist/axios.min.js')
+    script(src='/socket.io/socket.io.js')
+    script(src="./js/animated-background.js")
+    script(src='/js/login-menu.js')
+    script(type='module', src='/js/main.js')
