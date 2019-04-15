@@ -5,7 +5,7 @@ html(lang='fr')
     meta(http-equiv='X-UA-Compatible', content='IE=edge')
     title FakeSlither.io
     meta(name='viewport', content='width=device-width, initial-scale=1')
-    link(rel='stylesheet', href='/stylesheets/main.css')
+    link(rel='stylesheet', href='/public/stylesheets/main.css')
   body
     main
       #menu-container
@@ -70,8 +70,13 @@ html(lang='fr')
           p
             button.btn.btn--success Créer compte
 
+    //- vendor
     script(src='https://unpkg.com/axios/dist/axios.min.js')
     script(src='/socket.io/socket.io.js')
-    script(src="./js/animated-background.js")
-    script(src='/js/login-menu.js')
-    script(type='module', src='/js/main.js')
+    script(src="https://unpkg.com/eventemitter3@latest/umd/eventemitter3.min.js")
+
+    //- my scripts
+    script(src="/shared/net-emitter.js")
+    script(src="/public/js/animated-background.js")
+    script(src='/public/js/login-menu.js')
+    script(type='module', src='/public/js/main.js')

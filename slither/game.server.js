@@ -6,6 +6,8 @@ const Circle = require("./geometry/circle.js");
 const Dot = require("./dot.js");
 const mongodb = require("mongodb");
 const db = require("../db.js");
+const EventEmitter2 = require("eventemitter2").EventEmitter2;
+const createNetEmitter = require("../shared/net-emitter.js").createNetEmitter;
 
 class Game {
   constructor(io) {
@@ -14,7 +16,7 @@ class Game {
     this.connections = {};
 
     // Game world
-    this.world = new Circle(0, 0, 4000);
+    this.world = new Circle(0, 0, 2000);
     this.world.type = "World";
 
     // Game timer
@@ -33,7 +35,7 @@ class Game {
     // Game objects
     this.snakes = [];
     this.dots = [];
-    this.MAX_DOT_COUNT = 500;
+    this.MAX_DOT_COUNT = 200;
     for (let i = 0; i < this.MAX_DOT_COUNT; i++) {
       this.spawnRandomDot();
     }
@@ -47,8 +49,8 @@ class Game {
 
     alpha = utils.randInt(0, 360);
     r = utils.randInt(0, this.world.r - 50);
-    x = Math.cos(utils.degToRad(alpha)) * r;
-    y = Math.sin(utils.degToRad(alpha)) * r;
+    x = Math.round(Math.cos(utils.degToRad(alpha)) * r);
+    y = Math.round(Math.sin(utils.degToRad(alpha)) * r);
 
     this.dots.push(new Dot(this, x, y, 3, color));
   }
@@ -69,6 +71,13 @@ class Game {
     this.io.on("connection", socket => {
       console.log("new connection: ", socket.id);
 
+      // const net = createNetEmitter(EventEmitter2, socket);
+
+      // setInterval(() => {
+      //   net.sender.emit("game start", "state of the game goes here");
+      //   // socket.emit("server-start-game1");
+      // }, 200);
+
       // Save new connection
       this.connections[socket.id] = {
         socket
@@ -80,7 +89,7 @@ class Game {
 
         // Notify all clients about the new connection
         socket.join("game");
-        socket.emit("server-start-game", this.getGameStateAsJSON());
+        socket.emit("server-start-game", this.getFullGameStateAsJSON());
       });
 
       socket.on("client-input", ({ player, actions }) => {
@@ -110,12 +119,37 @@ class Game {
     });
   }
 
-  getGameStateAsJSON() {
+  getFullGameStateAsJSON() {
     const gameState = {
       timestamp: Date.now(),
       world: this.world,
-      snakes: this.snakes.filter(snake => !snake.isDead),
+      snakes: this.snakes,
       dots: this.dots
+    };
+
+    // Avoid circular references
+    return JSON.stringify(gameState, (key, value) => {
+      if (key === "game") {
+        // omit game reference from within snakes
+        return undefined;
+      } else if (key === "snake") {
+        // omit snake reference from within snake segments
+        return undefined;
+      } else {
+        return value;
+      }
+    });
+  }
+
+  getGameStateAsJSON() {
+    const gameState = {
+      timestamp: Date.now(),
+      snakes: this.snakes.filter(snake => !snake.isDead),
+      dots: this.dots.reduce(
+        (acc, dot) => [...acc, dot.x, dot.y, dot.r, dot.color],
+        []
+      ),
+      test: new Uint8Array(10)
     };
 
     // Avoid circular references

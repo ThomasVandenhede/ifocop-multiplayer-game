@@ -64,6 +64,12 @@ export default class Game {
     this.actions = [];
 
     // build game
+    const net = netEmitter.createNetEmitter(EventEmitter3, this.socket);
+
+    net.receiver.on("game start", function(worldState) {
+      console.log("TCL: Game -> constructor -> worldState", worldState);
+    });
+
     this.socket.on("server-start-game", json => {
       this.joinRequested = false;
       this.inGame = true;
@@ -167,7 +173,7 @@ export default class Game {
    */
   processServerUpdate(gameState) {
     // update dots
-    this.dots = gameState.dots;
+    this.dots = this.decodeDots(gameState.dots);
     this.dots.forEach(dot => {
       this.renderer.register(dot);
     });
@@ -204,6 +210,20 @@ export default class Game {
     this.camera.center(this.player.segments[0].x, this.player.segments[0].y);
   }
 
+  decodeDots(dots) {
+    const decodedDots = [];
+    for (let i = 0; i < dots.length; i += 4) {
+      decodedDots.push({
+        x: dots[i],
+        y: dots[i + 1],
+        r: dots[i + 2],
+        color: dots[i + 3],
+        type: "Dot"
+      });
+    }
+    return decodedDots;
+  }
+
   preload(...resources) {
     const tasks = [];
 
@@ -233,8 +253,8 @@ export default class Game {
   create() {
     this.preloading = true;
     this.preload(
-      { src: "/images/snake-body2.png", name: "snake" },
-      { src: "/images/bg54.jpg", name: "background" }
+      { src: "/public/images/snake-body2.png", name: "snake" },
+      { src: "/public/images/bg54.jpg", name: "background" }
     ).then(() => {
       this.start();
     });

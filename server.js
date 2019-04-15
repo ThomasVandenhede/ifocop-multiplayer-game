@@ -9,9 +9,8 @@ const session = require("express-session");
 const MongoStore = require("connect-mongo")(session);
 const mongodb = require("mongodb");
 
-const mongoDB = process.env.MONGODB_URI || "mongodb://localhost:27017";
-
 // constants
+const mongoDB = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const PORT_NUMBER = process.env.PORT || 3000;
 
 // database
@@ -47,7 +46,8 @@ io.use(
 );
 
 // static files
-app.use(express.static(path.join(__dirname, "/public")));
+app.use("/public", express.static(path.join(__dirname, "/public")));
+app.use("/shared", express.static(path.join(__dirname, "/shared")));
 
 // routing
 app.get("/", (req, res) => {
@@ -132,8 +132,8 @@ app.post("/signup", (req, res) => {
         .insertOne({
           username,
           password,
-          maxScore: 0,
-          maxKills: 0
+          max_score: 0,
+          max_kills: 0
         })
         .then(user => {
           req.session.userID = user._id;
