@@ -5,15 +5,17 @@ const io = require("socket.io")(http);
 const path = require("path");
 const Game = require("./slither/game.server.js").Game;
 const bodyParser = require("body-parser");
+const session = require("express-session");
+const MongoStore = require("connect-mongo")(session);
 const mongodb = require("mongodb");
+
+const mongoDB = process.env.MONGODB_URI || "mongodb://localhost:27017";
 
 // constants
 const PORT_NUMBER = process.env.PORT || 3000;
 
 // database
 const db = require("./db.js");
-
-var mongoDB = process.env.MONGODB_URI || "mongodb://localhost:27017";
 
 // middleware
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -26,17 +28,20 @@ app.set("view engine", "pug");
 const game = new Game(io);
 
 // session setup
-const session = require("express-session")({
+const sess = session({
   secret: "my-secret",
   resave: true,
-  saveUninitialized: true
+  saveUninitialized: true,
+  store: new MongoStore({
+    url: mongoDB
+  })
 });
 const sharedsession = require("express-socket.io-session");
 
-app.use(session);
+app.use(sess);
 
 io.use(
-  sharedsession(session, {
+  sharedsession(sess, {
     autoSave: true
   })
 );
@@ -47,7 +52,7 @@ app.use(express.static(path.join(__dirname, "/public")));
 // routing
 app.get("/", (req, res) => {
   if (req.session.userID) {
-    const dbClient = db.get("slither");
+    const dbClient = db.getInstance().db("slither");
     const usersCollection = dbClient.collection("users");
 
     usersCollection
@@ -65,7 +70,7 @@ app.get("/", (req, res) => {
 
 app.post("/login", (req, res, next) => {
   const { username, password } = req.body;
-  const dbClient = db.get("slither");
+  const dbClient = db.getInstance().db("slither");
   const usersCollection = dbClient.collection("users");
 
   usersCollection
@@ -110,7 +115,7 @@ app.post("/login", (req, res, next) => {
 
 app.post("/signup", (req, res) => {
   const { username, password } = req.body;
-  const dbClient = db.get("slither");
+  const dbClient = db.getInstance().db("slither");
   const usersCollection = dbClient.collection("users");
 
   usersCollection

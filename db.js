@@ -1,6 +1,6 @@
-var MongoClient = require("mongodb").MongoClient;
+const MongoClient = require("mongodb").MongoClient;
 
-var state = {
+const state = {
   client: null
 };
 
@@ -24,8 +24,8 @@ exports.connect = function(url, done) {
   );
 };
 
-exports.get = function(dbName) {
-  return state.client.db(dbName);
+exports.getInstance = function() {
+  return state.client;
 };
 
 exports.close = function(done) {

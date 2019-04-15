@@ -186,7 +186,7 @@ class Game {
 
     if (socket && socket.handshake.session) {
       const { userID } = socket.handshake.session;
-      const dbClient = db.get("slither");
+      const dbClient = db.getInstance().db("slither");
       const usersCollection = dbClient.collection("users");
       const player = this.getSnakeById(socket.id);
 
