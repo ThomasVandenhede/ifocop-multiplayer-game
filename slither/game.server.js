@@ -6,8 +6,6 @@ const Circle = require("./geometry/circle.js");
 const Dot = require("./dot.js");
 const mongodb = require("mongodb");
 const db = require("../db.js");
-const EventEmitter2 = require("eventemitter2").EventEmitter2;
-const createNetEmitter = require("../shared/net-emitter.js").createNetEmitter;
 
 class Game {
   constructor(io) {
@@ -70,13 +68,6 @@ class Game {
   setupSocketEvents() {
     this.io.on("connection", socket => {
       console.log("new connection: ", socket.id);
-
-      // const net = createNetEmitter(EventEmitter2, socket);
-
-      // setInterval(() => {
-      //   net.sender.emit("game start", "state of the game goes here");
-      //   // socket.emit("server-start-game1");
-      // }, 200);
 
       // Save new connection
       this.connections[socket.id] = {

@@ -64,12 +64,6 @@ export default class Game {
     this.actions = [];
 
     // build game
-    const net = netEmitter.createNetEmitter(EventEmitter3, this.socket);
-
-    net.receiver.on("game start", function(worldState) {
-      console.log("TCL: Game -> constructor -> worldState", worldState);
-    });
-
     this.socket.on("server-start-game", json => {
       this.joinRequested = false;
       this.inGame = true;
