@@ -18,7 +18,7 @@ export default class Renderer {
     const methods = {
       Dot: function(ctx, camera) {
         ctx.save();
-        ctx.fillStyle = this.color;
+        ctx.fillStyle = `hsl(${this.hue}, 100%, 50%)`;
 
         ctx.beginPath();
         ctx.arc(
@@ -37,7 +37,7 @@ export default class Renderer {
         // draw snake
         ctx.save();
         ctx.lineCap = ctx.lineJoin = "round";
-        ctx.strokeStyle = this.color;
+        ctx.strokeStyle = `hsl(${this.hue}, 100%, 50%)`;
 
         ctx.lineWidth = camera.applyToDistance(this.radius * 2);
         ctx.beginPath();
@@ -55,7 +55,7 @@ export default class Renderer {
             (this.speed - this.BASE_SPEED) / (this.MAX_SPEED - this.BASE_SPEED);
 
           ctx.shadowBlur = camera.applyToDistance(this.radius * 4) * t;
-          ctx.shadowColor = this.color;
+          ctx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;
           ctx.stroke();
           ctx.stroke();
         }

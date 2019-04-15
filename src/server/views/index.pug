@@ -5,7 +5,7 @@ html(lang='fr')
     meta(http-equiv='X-UA-Compatible', content='IE=edge')
     title FakeSlither.io
     meta(name='viewport', content='width=device-width, initial-scale=1')
-    link(rel='stylesheet', href='/public/stylesheets/main.css')
+    link(rel='stylesheet', href='/client/stylesheets/main.css')
   body
     main
       #menu-container
@@ -74,7 +74,10 @@ html(lang='fr')
     script(src='https://unpkg.com/axios/dist/axios.min.js')
     script(src='/socket.io/socket.io.js')
 
-    //- my scripts
-    script(src="/public/js/animated-background.js")
-    script(src='/public/js/login-menu.js')
-    script(type='module', src='/public/js/main.js')
+    //- shared
+    script(src='/shared/utils.js')
+
+    //- client
+    script(src="/client/js/animated-background.js")
+    script(src='/client/js/login-menu.js')
+    script(type='module', src='/client/js/main.js')

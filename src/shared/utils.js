@@ -1,4 +1,4 @@
-module.exports = {
+const utils = {
   randInt(start, end) {
     return Math.floor(Math.random() * (end - start + 1) + start);
   },
@@ -44,3 +44,9 @@ module.exports = {
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
   }
 };
+
+if (typeof module === "object") {
+  module.exports = utils;
+} else {
+  window.utils = utils;
+}

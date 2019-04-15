@@ -46,8 +46,8 @@ io.use(
 );
 
 // static files
-app.use("/public", express.static(path.join(__dirname, "/public")));
-app.use("/shared", express.static(path.join(__dirname, "/shared")));
+app.use("/client", express.static(path.join(__dirname, "../client")));
+app.use("/shared", express.static(path.join(__dirname, "../shared")));
 
 // routing
 app.get("/", (req, res) => {

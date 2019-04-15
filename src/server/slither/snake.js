@@ -1,15 +1,18 @@
-const randomize = require("./randomize");
 const Vector = require("./geometry/vector");
 const Circle = require("./geometry/circle");
-const utils = require("./utils");
+const utils = require("../../shared/utils");
 const Dot = require("./dot");
 
 class Snake {
   constructor(game, id, x = 0, y = 0) {
     this.game = game;
+
+    // the area that the client sees (camera position and dimensions)
+    this.viewport;
+
     this.id = id;
     this.type = this.constructor.name;
-    this.color = randomize.hsl();
+    this.hue = utils.randInt(0, 359);
 
     this.isDead = false;
 
@@ -88,11 +91,15 @@ class Snake {
   dropFood() {
     // determine food coordinates
     const tail = this.segments[this.segments.length - 1];
-    const x = tail.x - this.radius * Math.cos((tail.dir * Math.PI * 2) / 360);
-    const y = tail.y - this.radius * Math.sin((tail.dir * Math.PI * 2) / 360);
+    const x = Math.round(
+      tail.x - this.radius * Math.cos((tail.dir * Math.PI * 2) / 360)
+    );
+    const y = Math.round(
+      tail.y - this.radius * Math.sin((tail.dir * Math.PI * 2) / 360)
+    );
 
     // add food to the world
-    const dot = new Dot(this.game, x, y, 1, this.color);
+    const dot = new Dot(this.game, x, y, 1, this.hue);
     this.game.dots.push(dot);
 
     // decrease mass
@@ -143,14 +150,14 @@ class Snake {
       if (utils.absAngleWithin180(this.target - this.dir) > 0) {
         this.dir += this.steering * dt;
       }
-      this.dir = utils.absAngleWithin180(this.dir);
+      this.dir = utils.toFixedPrecision(utils.absAngleWithin180(this.dir), 2);
     }
 
     // move snake's head (which also happens to be the snakes location)
     const dx = Math.cos(utils.degToRad(this.dir)) * this.speed * dt;
     const dy = Math.sin(utils.degToRad(this.dir)) * this.speed * dt;
-    this.x = this.head.x += dx;
-    this.y = this.head.y += dy;
+    this.x = utils.toFixedPrecision((this.head.x += dx), 2);
+    this.y = utils.toFixedPrecision((this.head.y += dy), 2);
     this.head.dir = this.dir;
 
     // update radius
@@ -168,36 +175,34 @@ class Snake {
     for (let i = 1; i < this.segments.length; i++) {
       // translate segment
       if (this.isBoosting) {
-        this.segments[i].x = utils.lerp(
-          this.segments[i - 1].x,
-          this.segments[i].x,
-          0.45
+        this.segments[i].x = utils.toFixedPrecision(
+          utils.lerp(this.segments[i - 1].x, this.segments[i].x, 0.45),
+          2
         );
-        this.segments[i].y = utils.lerp(
-          this.segments[i - 1].y,
-          this.segments[i].y,
-          0.45
+        this.segments[i].y = utils.toFixedPrecision(
+          utils.lerp(this.segments[i - 1].y, this.segments[i].y, 0.45),
+          2
         );
       } else {
-        this.segments[i].x = utils.lerp(
-          this.segments[i - 1].x,
-          this.segments[i].x,
-          0.6
+        this.segments[i].x = utils.toFixedPrecision(
+          utils.lerp(this.segments[i - 1].x, this.segments[i].x, 0.6),
+          2
         );
-        this.segments[i].y = utils.lerp(
-          this.segments[i - 1].y,
-          this.segments[i].y,
-          0.6
+        this.segments[i].y = utils.toFixedPrecision(
+          utils.lerp(this.segments[i - 1].y, this.segments[i].y, 0.6),
+          2
         );
       }
       // work out the snake's body part direction
-      this.segments[i].dir =
+      this.segments[i].dir = utils.toFixedPrecision(
         (Math.atan2(
           this.segments[i - 1].y - this.segments[i].y,
           this.segments[i - 1].x - this.segments[i].x
         ) *
           360) /
-        (Math.PI * 2);
+          (Math.PI * 2),
+        2
+      );
     }
 
     this.runCollisionDetection();

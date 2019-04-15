@@ -1,5 +1,5 @@
 const Circle = require("./geometry/circle.js");
-const utils = require("./utils.js");
+const utils = require("../../shared/utils.js");
 
 const getRadiusFromMass = mass => {
   if (mass === 1) return 5;
@@ -9,7 +9,7 @@ const getRadiusFromMass = mass => {
 };
 
 class Dot extends Circle {
-  constructor(game, x = 0, y = 0, mass, color) {
+  constructor(game, x = 0, y = 0, mass, hue) {
     super(x, y, getRadiusFromMass(mass));
     this.game = game;
 
@@ -23,7 +23,7 @@ class Dot extends Circle {
     this.INITIAL_X = this.x;
     this.INITIAL_Y = this.y;
     this.INITIAL_RADIUS = this.r;
-    this.color = color;
+    this.hue = hue;
 
     // how much food this dot is worth
     this.value = utils.randInt(10, 20);

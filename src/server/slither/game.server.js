@@ -1,7 +1,6 @@
-const randomize = require("./randomize.js");
 const GameTimer = require("./gameTimer.js").GameTimer;
 const Snake = require("./snake.js");
-const utils = require("./utils.js");
+const utils = require("../../shared/utils.js");
 const Circle = require("./geometry/circle.js");
 const Dot = require("./dot.js");
 const mongodb = require("mongodb");
@@ -43,18 +42,20 @@ class Game {
 
   spawnRandomDot() {
     let x, y, alpha, r;
-    let color = randomize.hsl();
+    let hue = utils.randInt(0, 359);
 
     alpha = utils.randInt(0, 360);
     r = utils.randInt(0, this.world.r - 50);
     x = Math.round(Math.cos(utils.degToRad(alpha)) * r);
     y = Math.round(Math.sin(utils.degToRad(alpha)) * r);
 
-    this.dots.push(new Dot(this, x, y, 3, color));
+    this.dots.push(new Dot(this, x, y, 3, hue));
   }
 
   spawnSnake(id) {
-    this.snakes.push(new Snake(this, id));
+    const newSnake = new Snake(this, id);
+    this.snakes.push(newSnake);
+    return newSnake;
   }
 
   getSnakeById(id) {
@@ -74,13 +75,16 @@ class Game {
         socket
       };
 
-      socket.on("client-join-game", () => {
-        // Add new snake
-        this.spawnSnake(socket.id);
+      socket.on("client-join-game", viewport => {
+        // Create new snake
+        const snake = this.spawnSnake(socket.id);
+        snake.viewport = viewport;
 
-        // Notify all clients about the new connection
-        socket.join("game");
+        // Inform the player about the current state of the game
         socket.emit("server-start-game", this.getFullGameStateAsJSON());
+
+        // Finally let the player enter the game
+        socket.join("game");
       });
 
       socket.on("client-input", ({ player, actions }) => {
@@ -112,7 +116,6 @@ class Game {
 
   getFullGameStateAsJSON() {
     const gameState = {
-      timestamp: Date.now(),
       world: this.world,
       snakes: this.snakes,
       dots: this.dots
@@ -134,13 +137,11 @@ class Game {
 
   getGameStateAsJSON() {
     const gameState = {
-      timestamp: Date.now(),
       snakes: this.snakes.filter(snake => !snake.isDead),
       dots: this.dots.reduce(
-        (acc, dot) => [...acc, dot.x, dot.y, dot.r, dot.color],
+        (acc, dot) => [...acc, dot.x, dot.y, dot.r, dot.hue],
         []
-      ),
-      test: new Uint8Array(10)
+      )
     };
 
     // Avoid circular references
@@ -171,7 +172,10 @@ class Game {
     this.snakes.forEach(snake => snake.update(dt));
     this.dots.forEach(dot => dot.update(dt));
 
-    // notify client in the game about new game state
+    this.sendUpdate();
+  }
+
+  sendUpdate() {
     this.io.to("game").emit("server-update", this.getGameStateAsJSON());
   }
 
@@ -191,6 +195,7 @@ class Game {
             player.target = player.dir -= player.steering * frameDuration;
           }
           if (command === "BOOST_START") {
+            player.isBoosting = true;
             player.isBoosting = true;
           }
           if (command === "BOOST_STOP") {

@@ -131,6 +131,10 @@ export default class Game {
       this.processServerUpdate(JSON.parse(gameStateJSON));
       this.getPlayer() && this.processClientInput();
     });
+
+    this.socket.on("server-dots-update", function(buffer) {
+      // console.log("buffer", buffer);
+    });
   }
 
   requestJoin() {
@@ -166,28 +170,12 @@ export default class Game {
    * Apply server game state.
    */
   processServerUpdate(gameState) {
-    // update dots
+    console.log("TCL: Game -> processServerUpdate -> gameState", gameState);
     this.dots = this.decodeDots(gameState.dots);
     this.dots.forEach(dot => {
       this.renderer.register(dot);
     });
 
-    // // update opponents
-    // const opponents = gameState.snakes.filter(
-    //   snake => snake.id !== this.player.id
-    // );
-
-    // // update only player's head
-    // const updatedPlayer = gameState.snakes.find(
-    //   snake => snake.id === this.player.id
-    // );
-
-    // // update player's state
-    // this.player.isBoosting = updatedPlayer.isBoosting;
-    // this.player.radius = updatedPlayer.radius;
-
-    // // bring all snakes together
-    // this.snakes = [...opponents, this.player];
     this.snakes = gameState.snakes;
     this.player = this.snakes.find(snake => snake.id === this.socket.id);
 
@@ -211,7 +199,7 @@ export default class Game {
         x: dots[i],
         y: dots[i + 1],
         r: dots[i + 2],
-        color: dots[i + 3],
+        hue: dots[i + 3],
         type: "Dot"
       });
     }
@@ -247,8 +235,8 @@ export default class Game {
   create() {
     this.preloading = true;
     this.preload(
-      { src: "/public/images/snake-body2.png", name: "snake" },
-      { src: "/public/images/bg54.jpg", name: "background" }
+      { src: "/client/images/snake-body2.png", name: "snake" },
+      { src: "/client/images/bg54.jpg", name: "background" }
     ).then(() => {
       this.start();
     });
