@@ -131,10 +131,6 @@ export default class Game {
       this.processServerUpdate(JSON.parse(gameStateJSON));
       this.getPlayer() && this.processClientInput();
     });
-
-    this.socket.on("server-dots-update", function(buffer) {
-      // console.log("buffer", buffer);
-    });
   }
 
   requestJoin() {
@@ -170,13 +166,12 @@ export default class Game {
    * Apply server game state.
    */
   processServerUpdate(gameState) {
-    console.log("TCL: Game -> processServerUpdate -> gameState", gameState);
     this.dots = this.decodeDots(gameState.dots);
     this.dots.forEach(dot => {
       this.renderer.register(dot);
     });
 
-    this.snakes = gameState.snakes;
+    this.snakes = this.decodeSnakes(gameState.snakes);
     this.player = this.snakes.find(snake => snake.id === this.socket.id);
 
     if (!this.player) return;
@@ -190,6 +185,24 @@ export default class Game {
       1.15 * Math.pow(this.player.INITIAL_RADIUS / this.player.radius, 1 / 2);
     this.camera.update();
     this.camera.center(this.player.segments[0].x, this.player.segments[0].y);
+  }
+
+  decodeSnakes(snakes) {
+    const decodedSnakes = [];
+    for (let i = 0; i < snakes.length; i++) {
+      const snake = snakes[i];
+      const decodedSegments = [];
+      for (let j = 0; j < snake.segments.length; j += 3) {
+        decodedSegments.push({
+          x: snake.segments[j],
+          y: snake.segments[j + 1],
+          dir: snake.segments[j + 2]
+        });
+      }
+      snake.segments = decodedSegments;
+      decodedSnakes.push(snake);
+    }
+    return decodedSnakes;
   }
 
   decodeDots(dots) {

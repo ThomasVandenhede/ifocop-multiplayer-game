@@ -137,7 +137,15 @@ class Game {
 
   getGameStateAsJSON() {
     const gameState = {
-      snakes: this.snakes.filter(snake => !snake.isDead),
+      snakes: this.snakes
+        .filter(snake => !snake.isDead)
+        .map(snake => ({
+          ...snake,
+          segments: snake.segments.reduce(
+            (acc, segment) => [...acc, segment.x, segment.y, segment.dir],
+            []
+          )
+        })),
       dots: this.dots.reduce(
         (acc, dot) => [...acc, dot.x, dot.y, dot.r, dot.hue],
         []
