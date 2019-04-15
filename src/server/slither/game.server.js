@@ -10,10 +10,9 @@ class Game {
   constructor(io) {
     // Socket.io
     this.io = io;
-    this.connections = {};
 
     // Game world
-    this.world = new Circle(0, 0, 2000);
+    this.world = new Circle(0, 0, 4000);
     this.world.type = "World";
 
     // Game timer
@@ -36,8 +35,6 @@ class Game {
     for (let i = 0; i < this.MAX_DOT_COUNT; i++) {
       this.spawnRandomDot();
     }
-
-    this.setupSocketEvents();
   }
 
   spawnRandomDot() {
@@ -66,54 +63,6 @@ class Game {
     this.snakes = this.snakes.filter(snake => snake.id !== id);
   }
 
-  setupSocketEvents() {
-    this.io.on("connection", socket => {
-      console.log("new connection: ", socket.id);
-
-      // Save new connection
-      this.connections[socket.id] = {
-        socket
-      };
-
-      socket.on("client-join-game", viewport => {
-        // Create new snake
-        const snake = this.spawnSnake(socket.id);
-        snake.viewport = viewport;
-
-        // Inform the player about the current state of the game
-        socket.emit("server-start-game", this.getFullGameStateAsJSON());
-
-        // Finally let the player enter the game
-        socket.join("game");
-      });
-
-      socket.on("client-input", ({ player, actions }) => {
-        // Organize player input by socket ID.
-        this.clientInput[socket.id] = [
-          ...(this.clientInput[socket.id] || []),
-          ...actions
-        ];
-      });
-
-      socket.on("client-leave-game", () => {
-        // finally leave game
-        socket.leave("game");
-        console.log(`player ${socket.id} has left the game`);
-      });
-
-      socket.on("disconnect", () => {
-        // Delete connection
-        delete this.connections[socket.id];
-
-        // Delete snake
-        this.removePlayer(socket.id);
-
-        // Notify client
-        this.io.emit("clientDisconnect", socket.id);
-      });
-    });
-  }
-
   getFullGameStateAsJSON() {
     const gameState = {
       world: this.world,
@@ -137,19 +86,8 @@ class Game {
 
   getGameStateAsJSON() {
     const gameState = {
-      snakes: this.snakes
-        .filter(snake => !snake.isDead)
-        .map(snake => ({
-          ...snake,
-          segments: snake.segments.reduce(
-            (acc, segment) => [...acc, segment.x, segment.y, segment.dir],
-            []
-          )
-        })),
-      dots: this.dots.reduce(
-        (acc, dot) => [...acc, dot.x, dot.y, dot.r, dot.hue],
-        []
-      )
+      snakes: this.encodeSnakes(this.snakes),
+      dots: this.encodeDots(this.dots)
     };
 
     // Avoid circular references
@@ -164,6 +102,25 @@ class Game {
         return value;
       }
     });
+  }
+
+  encodeSnakes(snakes) {
+    return snakes
+      .filter(snake => !snake.isDead)
+      .map(snake => ({
+        ...snake,
+        segments: snake.segments.reduce(
+          (acc, segment) => [...acc, segment.x, segment.y, segment.dir],
+          []
+        )
+      }));
+  }
+
+  encodeDots(dots) {
+    return dots.reduce(
+      (acc, dot) => [...acc, dot.x, dot.y, dot.r, dot.hue],
+      []
+    );
   }
 
   step() {
