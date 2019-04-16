@@ -1,6 +1,8 @@
 import Game from "./game.client.js";
 
 document.addEventListener("DOMContentLoaded", function() {
+  window.animatedBackground.start();
+
   // Initialize socket.io
   const socket = io();
 

@@ -9,7 +9,7 @@ const getRadiusFromMass = mass => {
 };
 
 class Dot extends Circle {
-  constructor(game, x = 0, y = 0, mass, hue) {
+  constructor({ game, x = 0, y = 0, mass, hue }) {
     super(x, y, getRadiusFromMass(mass));
     this.game = game;
 

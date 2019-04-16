@@ -63,8 +63,12 @@ router.post("/signup", (req, res, next) => {
       usersCollection.insertOne({
         username,
         password: hash,
-        max_score: 0,
-        max_kills: 0
+        stats: {
+          max_score: 0,
+          max_kills: 0,
+          last_score: 0,
+          last_game_duration: 0
+        }
       })
     )
     .then(result => {
@@ -78,6 +82,28 @@ router.post("/signup", (req, res, next) => {
 router.get("/logout", (req, res) => {
   req.session.destroy();
   res.send();
+});
+
+router.get("/me", (req, res, next) => {
+  const id = req.session.userID;
+
+  if (!id) next(new createError.Forbidden());
+
+  db.getInstance()
+    .db("slither")
+    .collection("users")
+    .findOne(
+      {
+        _id: new mongodb.ObjectID(id)
+      },
+      { projection: { password: false } }
+    )
+    .then(user => {
+      if (!user) throw new createError.NotFound();
+
+      res.json(user);
+    })
+    .catch(next);
 });
 
 module.exports = router;

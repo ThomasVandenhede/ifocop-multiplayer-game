@@ -8,6 +8,8 @@ const MongoStore = require("connect-mongo")(session);
 const indexRoute = require("./routing/index.js");
 const logger = require("morgan");
 const createError = require("http-errors");
+const mongodb = require("mongodb");
+const db = require("./db.js");
 
 /**
  * HTTP SERVER
@@ -16,9 +18,6 @@ const createError = require("http-errors");
 // constants
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const PORT_NUMBER = process.env.PORT || 3000;
-
-// database
-const db = require("./db.js");
 
 // middleware
 app.use(logger("dev"));
@@ -94,15 +93,25 @@ io.on("connection", socket => {
   connections[socket.id] = socket;
 
   socket.on("client-join-game", viewport => {
-    // Create new snake
-    const snake = game.spawnSnake(socket.id);
-    snake.viewport = viewport;
+    if (socket.handshake.session.userID) {
+      db.getInstance()
+        .db("slither")
+        .collection("users")
+        .findOne({
+          _id: new mongodb.ObjectID(socket.handshake.session.userID)
+        })
+        .then(user => {
+          // Create new snake
+          const snake = game.spawnSnake(socket.id, user.username);
+          snake.viewport = viewport;
 
-    // Inform the player about the current state of the game
-    socket.emit("server-start-game", game.getFullGameStateAsJSON());
+          // Inform the player about the current state of the game
+          socket.emit("server-start-game", game.getFullGameStateAsJSON());
 
-    // Finally let the player enter the game
-    socket.join("game");
+          // Finally let the player enter the game
+          socket.join("game");
+        });
+    }
   });
 
   socket.on("client-input", ({ actions }) => {

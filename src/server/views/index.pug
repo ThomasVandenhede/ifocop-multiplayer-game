@@ -13,7 +13,21 @@ html(lang='fr')
         if user
             #play-menu
               button#logoutButton.btn.btn--danger Déconnexion
-              ul.nav__list
+
+              ul.user-info.list-reset
+                h1= user.username
+                table
+                  tbody
+                    tr
+                      th
+                        | Meilleur score
+                      td#user-info-max-score= user.stats && user.stats.max_score
+                    tr
+                      th
+                        | Plus grand nombre de victimes
+                      td#user-info-max-kills= user.stats && user.stats.max_kills
+                
+              ul.nav__list.list-reset
                 li.nav__item
                   button#playButton.btn.btn--big.btn--success Jouer
         else
@@ -41,7 +55,7 @@ html(lang='fr')
         span.close ×
         form#loginForm.form
           p
-            label(for='username') Identifiant
+            label(for='username') Pseudo
             input(type='text', name='username', required='')
           p#username-error.error-message
             | Cet identifiant n'existe pas
@@ -77,6 +91,7 @@ html(lang='fr')
     script(src='/shared/utils.js')
 
     //- client
-    script(src="/client/js/animated-background.js")
-    script(src='/client/js/login-menu.js')
+    script(type="module", src="/client/js/animated-background.js")
+    script(type="module", src='/client/js/modal.js')
+    script(type="module", src='/client/js/ajax.js')
     script(type='module', src='/client/js/main.js')

@@ -46,11 +46,11 @@ class Game {
     x = Math.round(Math.cos(utils.degToRad(alpha)) * r);
     y = Math.round(Math.sin(utils.degToRad(alpha)) * r);
 
-    this.dots.push(new Dot(this, x, y, 3, hue));
+    this.dots.push(new Dot({ game: this, x, y, mass: 3, hue }));
   }
 
-  spawnSnake(id) {
-    const newSnake = new Snake(this, id);
+  spawnSnake(id, name) {
+    const newSnake = new Snake({ game: this, id, name });
     this.snakes.push(newSnake);
     return newSnake;
   }
@@ -190,14 +190,14 @@ class Game {
         .findOne({ _id: new mongodb.ObjectID(userID) })
         .then(user => {
           if (user) {
-            if (!user.max_score || user.max_score < player.mass)
+            if (!user.stats.max_score || user.stats.max_score < player.mass)
               usersCollection.updateOne(
                 {
                   _id: new mongodb.ObjectID(userID)
                 },
                 {
                   $set: {
-                    max_score: player.mass
+                    "stats.max_score": player.mass
                   }
                 }
               );

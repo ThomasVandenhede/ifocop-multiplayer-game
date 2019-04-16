@@ -42,7 +42,8 @@ function createAnimatedBackground() {
     balls.push({ x, y, vx, vy, r, color });
   }
 
-  let then = (now = Date.now());
+  let then;
+  let now = Date.now();
   let frame;
 
   function step() {

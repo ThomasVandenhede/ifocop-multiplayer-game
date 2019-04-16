@@ -12,13 +12,15 @@ export default class Renderer {
     this.pre.width = this.canvas.width;
     this.pre.height = this.canvas.height;
     this.preCtx = this.pre.getContext("2d");
+    this.preCtx.textAlign = "center";
+    this.preCtx.font = "24px arial";
   }
 
   register(gameObject) {
     const methods = {
       Dot: function(ctx, camera) {
         ctx.save();
-        ctx.fillStyle = `hsl(${this.hue}, 100%, 50%)`;
+        ctx.fillStyle = `hsl(${this.hue}, 100%, 69%)`;
 
         ctx.beginPath();
         ctx.arc(
@@ -37,7 +39,7 @@ export default class Renderer {
         // draw snake
         ctx.save();
         ctx.lineCap = ctx.lineJoin = "round";
-        ctx.strokeStyle = `hsl(${this.hue}, 100%, 50%)`;
+        ctx.strokeStyle = `hsl(${this.hue}, 100%, 69%)`;
 
         ctx.lineWidth = camera.applyToDistance(this.radius * 2);
         ctx.beginPath();
@@ -55,10 +57,18 @@ export default class Renderer {
             (this.speed - this.BASE_SPEED) / (this.MAX_SPEED - this.BASE_SPEED);
 
           ctx.shadowBlur = camera.applyToDistance(this.radius * 4) * t;
-          ctx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;
+          ctx.shadowColor = `hsl(${this.hue}, 100%, 69%)`;
           ctx.stroke();
           ctx.stroke();
         }
+
+        // display player name
+        ctx.fillStyle = "white";
+        ctx.fillText(
+          this.name,
+          camera.applyToX(this.x),
+          camera.applyToY(this.y + this.radius) + 30
+        );
         ctx.restore();
       },
 

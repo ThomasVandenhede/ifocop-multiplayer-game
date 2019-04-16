@@ -4,6 +4,7 @@ import Mouse from "./Mouse.js";
 import Renderer from "./renderer.js";
 import { PI2 } from "./constants.js";
 import Grid from "./grid.js";
+import { updateUserInfo } from "./ajax.js";
 
 export default class Game {
   constructor(socket) {
@@ -113,6 +114,8 @@ export default class Game {
           this.join();
         }
       };
+
+      updateUserInfo();
 
       // trigger transition
       menuContainer.style.display = "block";

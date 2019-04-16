@@ -4,8 +4,10 @@ const utils = require("../../shared/utils");
 const Dot = require("./dot");
 
 class Snake {
-  constructor(game, id, x = 0, y = 0) {
+  constructor({ game, id, x = 0, y = 0, name }) {
     this.game = game;
+
+    this.name = name || "";
 
     // the area that the client sees (camera position and dimensions)
     this.viewport;
@@ -99,7 +101,7 @@ class Snake {
     );
 
     // add food to the world
-    const dot = new Dot(this.game, x, y, 1, this.hue);
+    const dot = new Dot({ game: this.game, x, y, mass: 1, hue: this.hue });
     this.game.dots.push(dot);
 
     // decrease mass

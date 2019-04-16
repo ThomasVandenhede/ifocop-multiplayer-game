@@ -1,64 +1,22 @@
-const loginButton = document.getElementById("loginButton");
-const signupButton = document.getElementById("signupButton");
-const logoutButton = document.getElementById("logoutButton");
-const loginModal = document.getElementById("loginModal");
-const loginModalClose = document.querySelector("#loginModal .close");
-const signupModal = document.getElementById("signupModal");
-const signupModalClose = document.querySelector("#signupModal .close");
-
-const loginNav = document.getElementById("");
-
-window.addEventListener("click", function(event) {
-  // show login modal
-  if (event.target === loginButton) {
-    loginModal.style.display = "block";
-  }
-  // show signup modal
-  if (event.target === signupButton) {
-    signupModal.style.display = "block";
-  }
-  // disconnect and refresh page
-  if (event.target === logoutButton) {
-    axios.get("/logout").then(res => {
-      window.location.reload(); // refresh page
-    });
-  }
-});
-
-// When the user clicks on <span> (x), close the modal
-loginModalClose.onclick = function() {
-  loginModal.style.display = "none";
-};
-
-// When the user clicks on <span> (x), close the modal
-signupModalClose.onclick = function() {
-  signupModal.style.display = "none";
-};
-
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
-  if (event.target == loginModal) {
-    loginModal.style.display = "none";
-  }
-  if (event.target == signupModal) {
-    signupModal.style.display = "none";
-  }
-};
-
 /**
  * AJAX CALLS
  */
 const loginForm = document.getElementById("loginForm");
 const signupForm = document.getElementById("signupForm");
+const logoutButton = document.getElementById("logoutButton");
 
-const getFormData = formEl => {
+loginForm.addEventListener("submit", handleLogin);
+signupForm.addEventListener("submit", handleSignup);
+window.addEventListener("click", handleLogout);
+
+function getFormData(formEl) {
   const formData = new FormData(formEl);
   const data = {};
   for (var entry of formData.entries()) {
     data[entry[0]] = entry[1];
   }
   return data;
-};
+}
 
 function resetErrorMessages() {
   document.querySelectorAll(".error-message").forEach(el => {
@@ -66,7 +24,16 @@ function resetErrorMessages() {
   });
 }
 
-loginForm.addEventListener("submit", event => {
+function handleLogout(event) {
+  if (event.target === logoutButton) {
+    // disconnect and refresh page
+    axios.get("/logout").then(res => {
+      window.location.reload(); // refresh page
+    });
+  }
+}
+
+function handleLogin(event) {
   event.preventDefault();
   const usernameErrorMessage = document.getElementById("username-error");
   const passwordErrorMessage = document.getElementById("password-error");
@@ -91,9 +58,9 @@ loginForm.addEventListener("submit", event => {
         passwordErrorMessage.style.display = "block";
       }
     });
-});
+}
 
-signupForm.addEventListener("submit", event => {
+function handleSignup(event) {
   event.preventDefault();
   const usernameSignupErrorMessage = document.getElementById(
     "username-signup-error"
@@ -114,6 +81,21 @@ signupForm.addEventListener("submit", event => {
         usernameSignupErrorMessage.style.display = "block";
       }
     });
-});
+}
 
-window.animatedBackground.start();
+export function updateUserInfo() {
+  axios
+    .get("/me")
+    .then(res => {
+      const me = res.data;
+      if (!me) return;
+
+      document.getElementById("user-info-max-score").innerHTML =
+        me.stats && me.stats.max_score;
+      document.getElementById("user-info-max-kills").innerHTML =
+        me.stats && me.stats.max_kills;
+    })
+    .catch(err => {
+      console.log(err);
+    });
+}
