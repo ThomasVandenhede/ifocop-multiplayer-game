@@ -275,6 +275,10 @@ canvas {
   max-width: 100%;
 }
 
+tr.gap {
+  height: 1rem;
+}
+
 .user-info table th {
   text-align: left;
 }

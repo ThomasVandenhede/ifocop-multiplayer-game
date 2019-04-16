@@ -21,6 +21,11 @@ html(lang='fr')
                   tbody
                     tr
                       th
+                        | Dernier score
+                      td#user-info-last-score= user.stats && user.stats.last_score
+                    tr.gap
+                    tr
+                      th
                         | Meilleur score
                       td#user-info-max-score= user.stats && user.stats.max_score
                     tr

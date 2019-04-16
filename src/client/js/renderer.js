@@ -35,11 +35,12 @@ export default class Renderer {
       },
       Snake: function(ctx, camera) {
         const segmentCount = this.segments.length;
+        const color = `hsl(${this.hue}, 100%, 69%)`;
 
         // draw snake
         ctx.save();
         ctx.lineCap = ctx.lineJoin = "round";
-        ctx.strokeStyle = `hsl(${this.hue}, 100%, 69%)`;
+        ctx.strokeStyle = color;
 
         ctx.lineWidth = camera.applyToDistance(this.radius * 2);
         ctx.beginPath();
@@ -57,7 +58,7 @@ export default class Renderer {
             (this.speed - this.BASE_SPEED) / (this.MAX_SPEED - this.BASE_SPEED);
 
           ctx.shadowBlur = camera.applyToDistance(this.radius * 4) * t;
-          ctx.shadowColor = `hsl(${this.hue}, 100%, 69%)`;
+          ctx.shadowColor = color;
           ctx.stroke();
           ctx.stroke();
         }

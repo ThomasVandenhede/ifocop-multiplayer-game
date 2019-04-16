@@ -190,17 +190,21 @@ class Game {
         .findOne({ _id: new mongodb.ObjectID(userID) })
         .then(user => {
           if (user) {
-            if (!user.stats.max_score || user.stats.max_score < player.mass)
-              usersCollection.updateOne(
-                {
-                  _id: new mongodb.ObjectID(userID)
-                },
-                {
-                  $set: {
-                    "stats.max_score": player.mass
-                  }
-                }
-              );
+            const payload = {
+              $set: {
+                "stats.last_score": player.mass
+              }
+            };
+            if (!user.stats.max_score || user.stats.max_score < player.mass) {
+              payload.$set["stats.max_score"] = player.mass;
+            }
+
+            usersCollection.updateOne(
+              {
+                _id: new mongodb.ObjectID(userID)
+              },
+              payload
+            );
           }
           console.log("player score saved");
 

@@ -90,6 +90,8 @@ export function updateUserInfo() {
       const me = res.data;
       if (!me) return;
 
+      document.getElementById("user-info-last-score").innerHTML =
+        me.stats && me.stats.last_score;
       document.getElementById("user-info-max-score").innerHTML =
         me.stats && me.stats.max_score;
       document.getElementById("user-info-max-kills").innerHTML =
