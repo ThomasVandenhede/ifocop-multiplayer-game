@@ -5,6 +5,7 @@ html(lang='fr')
     meta(http-equiv='X-UA-Compatible', content='IE=edge')
     title FakeSlither.io
     meta(name='viewport', content='width=device-width, initial-scale=1')
+    link(rel='stylesheet', href='/client/stylesheets/fonts.css')
     link(rel='stylesheet', href='/client/stylesheets/main.css')
 
   body
@@ -56,12 +57,12 @@ html(lang='fr')
         form#loginForm.form
           p
             label(for='username') Pseudo
-            input(type='text', name='username', required='')
+            input(type='text', name='username', required='' autocomplete="username")
           p#username-error.error-message
             | Cet identifiant n'existe pas
           p
             label(for='password') Mot de passe
-            input(type='password', name='password', required='')
+            input(type='password', name='password', required='' autocomplete="current-password")
           p#password-error.error-message
             | Mot de passe incorrect
           p
@@ -71,15 +72,15 @@ html(lang='fr')
       // Modal content
       .modal-content
         span.close ×
-        form#signupForm.form
+        form#signupForm.form(autocomplete="off")
           p
             label(for='username') Pseudo
-            input(type='text', name='username', required='')
+            input(type='text', name='username', required='' autocomplete='off')
           p#username-signup-error.error-message
             | Identifiant déjà pris
           p
             label(for='password') Mot de passe
-            input(type='password', name='password', required='')
+            input(type='password', name='password', required='' autocomplete='new-password')
           p
             button.btn.btn--success Créer un compte
 
