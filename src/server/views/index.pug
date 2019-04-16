@@ -60,13 +60,11 @@ html(lang='fr')
           p
             label(for='username') Pseudo
             input(type='text', name='username', required='')
+          p#username-signup-error.error-message
+            | Identifiant déjà pris
           p
             label(for='password') Mot de passe
             input(type='password', name='password', required='')
-          p#username-signup-error.error-message
-            | Identifiant déjà pris
-          p#email-signup-error.error-message
-            | Identifiant déjà pris
           p
             button.btn.btn--success Créer compte
 

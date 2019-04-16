@@ -60,6 +60,12 @@ const getFormData = formEl => {
   return data;
 };
 
+function resetErrorMessages() {
+  document.querySelectorAll(".error-message").forEach(el => {
+    el.style.display = "none";
+  });
+}
+
 loginForm.addEventListener("submit", event => {
   event.preventDefault();
   const usernameErrorMessage = document.getElementById("username-error");
@@ -69,8 +75,7 @@ loginForm.addEventListener("submit", event => {
 
   if (!data.username.trim() || !data.password.trim()) return;
 
-  passwordErrorMessage.style.display = "none";
-  usernameErrorMessage.style.display = "none";
+  resetErrorMessages();
 
   axios
     .post("/login", data)
@@ -90,16 +95,24 @@ loginForm.addEventListener("submit", event => {
 
 signupForm.addEventListener("submit", event => {
   event.preventDefault();
+  const usernameSignupErrorMessage = document.getElementById(
+    "username-signup-error"
+  );
   const form = event.target;
   const data = getFormData(form);
+
+  resetErrorMessages();
+
   axios
     .post("/signup", data)
     .then(res => {
-      console.log("nouveau compte créé avec succès");
-      signupModal.style.display = "none";
+      window.location.reload(true); // force page refresh (no cache allowed)
     })
     .catch(err => {
       console.log(err.response.data.message);
+      if (err.response.data.message === "user already exists") {
+        usernameSignupErrorMessage.style.display = "block";
+      }
     });
 });
 

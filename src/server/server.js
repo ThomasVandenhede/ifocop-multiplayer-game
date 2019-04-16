@@ -7,6 +7,7 @@ const session = require("express-session");
 const MongoStore = require("connect-mongo")(session);
 const indexRoute = require("./routing/index.js");
 const logger = require("morgan");
+const createError = require("http-errors");
 
 /**
  * HTTP SERVER
@@ -46,14 +47,23 @@ app.use("/shared", express.static(path.join(__dirname, "../shared")));
 // routing
 app.use("/", indexRoute);
 
+app.use((req, res, next) => {
+  next(new createError.NotFound());
+});
+
 // error handling
-app.use(function(err, req, res, next) {
+app.use((err, req, res, next) => {
+  if (err.status) {
+    res.status(err.status);
+  } else {
+    res.status(500);
+  }
   res.send({ message: err.message || "une erreur est survenue" });
 });
 
-db.connect(MONGODB_URI, function(err) {
+db.connect(MONGODB_URI, err => {
   if (!err) {
-    http.listen(PORT_NUMBER, function() {
+    http.listen(PORT_NUMBER, () => {
       console.log("listening on *:%d", PORT_NUMBER);
       game.step();
     });
