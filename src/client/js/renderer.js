@@ -14,91 +14,62 @@ export default class Renderer {
     this.preCtx = this.pre.getContext("2d");
     this.preCtx.textAlign = "center";
     this.preCtx.font = "24px arial";
+    this.snakeNameImages = {};
   }
 
-  register(gameObject) {
-    const methods = {
-      Dot: function(ctx, camera) {
-        ctx.save();
-        ctx.fillStyle = `hsl(${this.hue}, 100%, 69%)`;
+  renderDot(dot, ctx, camera) {
+    ctx.fillStyle = `hsl(${dot.hue}, 100%, 69%)`;
+    ctx.beginPath();
+    ctx.arc(
+      camera.applyToX(dot.x),
+      camera.applyToY(dot.y),
+      camera.applyToDistance(dot.r),
+      0,
+      PI2
+    );
+    ctx.fill();
+  }
 
-        ctx.beginPath();
-        ctx.arc(
-          camera.applyToX(this.x),
-          camera.applyToY(this.y),
-          camera.applyToDistance(this.r),
-          0,
-          PI2
-        );
-        ctx.fill();
-        ctx.restore();
-      },
-      Snake: function(ctx, camera) {
-        const segmentCount = this.segments.length;
-        const color = `hsl(${this.hue}, 100%, 69%)`;
+  renderSnake(snake, ctx, camera) {
+    const segmentCount = snake.segments.length;
+    const color = `hsl(${snake.hue}, 100%, 69%)`;
 
-        // draw snake
-        ctx.save();
-        ctx.lineCap = ctx.lineJoin = "round";
-        ctx.strokeStyle = color;
+    // draw snake
+    ctx.lineCap = ctx.lineJoin = "round";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = camera.applyToDistance(snake.radius * 2);
 
-        ctx.lineWidth = camera.applyToDistance(this.radius * 2);
-        ctx.beginPath();
-        ctx.moveTo(
-          camera.applyToX(this.segments[segmentCount - 1].x),
-          camera.applyToY(this.segments[segmentCount - 1].y)
-        );
-        for (let i = this.segments.length - 2; i >= 0; i--) {
-          const segment = this.segments[i];
-          ctx.lineTo(camera.applyToX(segment.x), camera.applyToY(segment.y));
-        }
-        ctx.stroke();
-        if (this.speed > this.BASE_SPEED) {
-          const t =
-            (this.speed - this.BASE_SPEED) / (this.MAX_SPEED - this.BASE_SPEED);
+    ctx.beginPath();
+    ctx.moveTo(
+      camera.applyToX(snake.segments[segmentCount - 1].x),
+      camera.applyToY(snake.segments[segmentCount - 1].y)
+    );
+    for (let i = snake.segments.length - 2; i >= 0; i--) {
+      const segment = snake.segments[i];
+      ctx.lineTo(camera.applyToX(segment.x), camera.applyToY(segment.y));
+    }
+    ctx.stroke();
+    if (snake.speed > snake.BASE_SPEED) {
+      const t =
+        (snake.speed - snake.BASE_SPEED) / (snake.MAX_SPEED - snake.BASE_SPEED);
 
-          ctx.shadowBlur = camera.applyToDistance(this.radius * 4) * t;
-          ctx.shadowColor = color;
-          ctx.stroke();
-          ctx.stroke();
-        }
+      ctx.shadowBlur = camera.applyToDistance(snake.radius * 4) * t;
+      ctx.shadowColor = color;
+      ctx.stroke();
+      ctx.stroke();
+    }
 
-        // display player name
-        ctx.fillStyle = "white";
-        ctx.fillText(
-          this.name,
-          camera.applyToX(this.x),
-          camera.applyToY(this.y + this.radius) + 30
-        );
-        ctx.restore();
-      },
-
-      World: function(ctx, camera) {
-        ctx.save();
-        ctx.drawImage(
-          window.bgCanvas,
-          camera.x + 4000, // -4000 is world.x
-          camera.y + 4000, // -4000 is world.y
-          camera.width,
-          camera.height,
-          0,
-          0,
-          window.innerWidth,
-          window.innerHeight
-        );
-        ctx.restore();
-      }
-    };
-
-    // add a render method to a game object based on its type
-    gameObject.render = methods[gameObject.type].bind(gameObject);
+    // display player name
+    ctx.fillStyle = "white";
+    ctx.fillText(
+      snake.name,
+      camera.applyToX(snake.x),
+      camera.applyToY(snake.y + snake.radius) + 30
+    );
   }
 
   cropBoundary(ctx, camera) {
-    ctx.save();
     ctx.globalCompositeOperation = "destination-in";
-
-    // crop hexagons to circle
     ctx.beginPath();
     ctx.arc(
       camera.applyToX(this.game.world.x),
@@ -108,11 +79,10 @@ export default class Renderer {
       PI2
     );
     ctx.fill();
-    ctx.restore();
+    ctx.globalCompositeOperation = "source-over"; // default
   }
 
   renderBoundary(ctx, camera) {
-    ctx.save();
     ctx.lineWidth = camera.applyToDistance(10);
     ctx.strokeStyle = "red";
     ctx.beginPath();
@@ -123,8 +93,8 @@ export default class Renderer {
       0,
       PI2
     );
+    ctx.closePath();
     ctx.stroke();
-    ctx.restore();
   }
 
   clearCanvases() {
@@ -135,10 +105,11 @@ export default class Renderer {
   render() {
     this.clearCanvases();
 
-    // Render grid
-    this.game.grid.draw(this.preCtx, this.game.camera);
+    this.preCtx.shadowBlur = 0; // default
+    this.preCtx.shadowColor = "rgba(0, 0, 0, 0)"; // default
+    this.preCtx.lineWidth = 1; // default
 
-    // Render dots
+    this.game.grid.draw(this.preCtx, this.game.camera);
     this.game.dots.forEach(dot => {
       var boundingRect = new AABB({
         x: dot.x - dot.r,
@@ -147,22 +118,255 @@ export default class Renderer {
         height: dot.r * 2
       });
       if (boundingRect.overlaps(this.game.camera)) {
-        dot.render(this.preCtx, this.game.camera);
+        this.renderDot(dot, this.preCtx, this.game.camera);
       }
     });
-
-    // Render snakes
     this.game.snakes.forEach(snake =>
-      snake.render(this.preCtx, this.game.camera)
+      this.renderSnake(snake, this.preCtx, this.game.camera)
     );
-
-    // Crop
     this.cropBoundary(this.preCtx, this.game.camera);
-
-    // Render world boundary
     this.renderBoundary(this.preCtx, this.game.camera);
 
     // Render our off-screen canvas to the visible canvas.
     this.ctx.drawImage(this.pre, 0, 0);
+
+    // // draw quadtree
+    // const that = this;
+    // that.ctx.strokeStyle = "yellow";
+    // this.game.quadtree.visit(function() {
+    //   window.drawQuadtree(this, false, that.ctx);
+    // });
   }
 }
+
+// /* global window, document */
+
+// window.randomNb = function(min, max) {
+//   if (min >= max) throw new Error("min must be < max");
+//   return Math.floor(Math.random() * (max - min)) + min;
+// };
+
+// window.randomColor = function() {
+//   var color = (((1 << 24) * Math.random()) | 0).toString(16);
+//   var pad = function(str, length) {
+//     if (str.length < length) {
+//       str = "0" + str;
+//       return pad(str, length);
+//     } else {
+//       return str;
+//     }
+//   };
+//   return "#" + pad(color, 6);
+// };
+
+// window.drawSquare = function(elt, fill, context) {
+//   context.beginPath();
+//   context.moveTo(elt.x, elt.y);
+//   context.lineTo(elt.x + (elt.width ? elt.width : 1), elt.y);
+//   context.lineTo(
+//     elt.x + (elt.width ? elt.width : 1),
+//     elt.y + (elt.height ? elt.height : 1)
+//   );
+//   context.lineTo(elt.x, elt.y + (elt.height ? elt.height : 1));
+//   context.closePath();
+//   context.stroke();
+//   if (fill) context.fill();
+// };
+
+// window.drawQuadtree = function(tree, fill, context) {
+//   var halfWidth = Math.max(Math.floor(tree.width / 2), 1);
+//   var halfHeight = Math.max(Math.floor(tree.height / 2), 1);
+
+//   window.drawSquare(
+//     {
+//       x: tree.x,
+//       y: tree.y,
+//       width: halfWidth,
+//       height: halfHeight
+//     },
+//     fill,
+//     context
+//   );
+//   window.drawSquare(
+//     {
+//       x: tree.x + halfWidth,
+//       y: tree.y,
+//       width: halfWidth,
+//       height: halfHeight
+//     },
+//     fill,
+//     context
+//   );
+//   window.drawSquare(
+//     {
+//       x: tree.x,
+//       y: tree.y + halfHeight,
+//       width: halfWidth,
+//       height: halfHeight
+//     },
+//     fill,
+//     context
+//   );
+//   window.drawSquare(
+//     {
+//       x: tree.x + halfWidth,
+//       y: tree.y + halfHeight,
+//       width: halfWidth,
+//       height: halfHeight
+//     },
+//     fill,
+//     context
+//   );
+// };
+
+// window.makeMovable = function(element, boundaryElement, callbacks) {
+//   var extractPos = function(event) {
+//     return {
+//       x: event.clientX ? event.clientX : event.changedTouches[0].clientX,
+//       y: event.clientY ? event.clientY : event.changedTouches[0].clientY
+//     };
+//   };
+
+//   var resizeAction = function(event) {
+//     var targetRect = element.getBoundingClientRect();
+//     var position = extractPos(event);
+
+//     if (boundaryElement) {
+//       var boundaries = boundaryElement.getBoundingClientRect();
+//       element.style.height = Math.max(
+//         5,
+//         Math.min(
+//           position.y - targetRect.top,
+//           boundaries.bottom - targetRect.top
+//         )
+//       );
+//       element.style.width = Math.max(
+//         5,
+//         Math.min(
+//           position.x - targetRect.left,
+//           boundaries.right - targetRect.left
+//         )
+//       );
+//     } else {
+//       element.style.height = Math.max(5, position.y - targetRect.top);
+//       element.style.width = Math.max(5, position.x - targetRect.left);
+//     }
+
+//     if (
+//       callbacks &&
+//       callbacks.onResize &&
+//       typeof callbacks.onResize === "function"
+//     ) {
+//       callbacks.onResize();
+//     }
+//   };
+//   var lastMovePos = null;
+//   var clickAction = function(event) {
+//     var targetRect = element.getBoundingClientRect();
+//     var position = extractPos(event);
+
+//     if (
+//       Math.abs(position.y - targetRect.bottom) < 12 &&
+//       Math.abs(position.x - targetRect.right < 12)
+//     ) {
+//       document
+//         .getElementsByTagName("body")[0]
+//         .addEventListener("mousemove", resizeAction);
+//       document
+//         .getElementsByTagName("body")[0]
+//         .addEventListener("touchmove", resizeAction);
+//     } else {
+//       document
+//         .getElementsByTagName("body")[0]
+//         .addEventListener("mousemove", moveAction);
+//       document
+//         .getElementsByTagName("body")[0]
+//         .addEventListener("touchmove", moveAction);
+//       lastMovePos = { x: position.x, y: position.y };
+//     }
+//     event.preventDefault();
+//   };
+//   var moveAction = function(event) {
+//     var position = extractPos(event);
+
+//     if (boundaryElement && boundaryElement.contains(event.target)) {
+//       var boundaries = boundaryElement.getBoundingClientRect();
+
+//       element.style.top =
+//         parseInt(window.getComputedStyle(element).top) +
+//         position.y -
+//         lastMovePos.y;
+//       element.style.left =
+//         parseInt(window.getComputedStyle(element).left) +
+//         position.x -
+//         lastMovePos.x;
+//       element.style.top = Math.max(
+//         0,
+//         Math.min(
+//           parseInt(element.style.top),
+//           boundaries.height - parseInt(window.getComputedStyle(element).height)
+//         )
+//       );
+//       element.style.left = Math.max(
+//         0,
+//         Math.min(
+//           parseInt(element.style.left),
+//           boundaries.width - parseInt(window.getComputedStyle(element).width)
+//         )
+//       );
+
+//       lastMovePos = { x: position.x, y: position.y };
+
+//       if (
+//         callbacks &&
+//         callbacks.onMove &&
+//         typeof callbacks.onMove === "function"
+//       ) {
+//         callbacks.onMove();
+//       }
+//     } else if (!boundaryElement) {
+//       element.style.top =
+//         parseInt(window.getComputedStyle(element).top) +
+//         position.y -
+//         lastMovePos.y;
+//       element.style.left =
+//         parseInt(window.getComputedStyle(element).left) +
+//         position.x -
+//         lastMovePos.x;
+
+//       lastMovePos = { x: position.x, y: position.y };
+
+//       if (
+//         callbacks &&
+//         callbacks.onMove &&
+//         typeof callbacks.onMove === "function"
+//       ) {
+//         callbacks.onMove();
+//       }
+//     }
+//   };
+
+//   element.addEventListener("mousedown", clickAction);
+//   element.addEventListener("touchstart", clickAction);
+
+//   document
+//     .getElementsByTagName("body")[0]
+//     .addEventListener("mouseup", function() {
+//       document
+//         .getElementsByTagName("body")[0]
+//         .removeEventListener("mousemove", resizeAction);
+//       document
+//         .getElementsByTagName("body")[0]
+//         .removeEventListener("mousemove", moveAction);
+//     });
+//   document
+//     .getElementsByTagName("body")[0]
+//     .addEventListener("touchend", function() {
+//       document
+//         .getElementsByTagName("body")[0]
+//         .removeEventListener("touchmove", resizeAction);
+//       document
+//         .getElementsByTagName("body")[0]
+//         .removeEventListener("touchmove", moveAction);
+//     });
+// };

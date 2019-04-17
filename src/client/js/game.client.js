@@ -73,21 +73,13 @@ export default class Game {
       const { snakes, dots, world } = gameState;
       // build game
       this.world = world;
-      this.renderer.register(this.world);
 
       // build dots
       this.dots = dots;
-      dots.forEach(dot => {
-        this.renderer.register(dot);
-      });
 
       // build snakes
       this.snakes = snakes;
       this.player = this.snakes.find(snake => snake.id === this.socket.id);
-
-      snakes.forEach(snake => {
-        this.renderer.register(snake);
-      });
 
       this.create();
     });
@@ -170,18 +162,11 @@ export default class Game {
    */
   processServerUpdate(gameState) {
     this.dots = this.decodeDots(gameState.dots);
-    this.dots.forEach(dot => {
-      this.renderer.register(dot);
-    });
 
     this.snakes = this.decodeSnakes(gameState.snakes);
     this.player = this.snakes.find(snake => snake.id === this.socket.id);
 
     if (!this.player) return;
-
-    this.snakes.forEach(snake => {
-      this.renderer.register(snake);
-    });
 
     // update camera
     this.camera.zoomLevel =
