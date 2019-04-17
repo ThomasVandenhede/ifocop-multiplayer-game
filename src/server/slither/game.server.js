@@ -43,15 +43,29 @@ class Game {
 
     alpha = utils.randInt(0, 360);
     r = utils.randInt(0, this.world.r - 50);
-    x = Math.round(Math.cos(utils.degToRad(alpha)) * r);
-    y = Math.round(Math.sin(utils.degToRad(alpha)) * r);
+    x = this.world.x + Math.round(Math.cos(utils.degToRad(alpha)) * r);
+    y = this.world.y + Math.round(Math.sin(utils.degToRad(alpha)) * r);
 
     this.dots.push(new Dot({ game: this, x, y, mass: 3, hue }));
   }
 
   spawnSnake(id, name) {
-    const newSnake = new Snake({ game: this, id, name });
+    const newSnake = new Snake({
+      game: this,
+      x: this.world.x,
+      y: this.world.y,
+      id,
+      name
+    });
     this.snakes.push(newSnake);
+    this.io.emit(
+      "server-new-snake",
+      JSON.stringify({
+        id: newSnake.id,
+        name: newSnake.name,
+        hue: newSnake.hue
+      })
+    );
     return newSnake;
   }
 

@@ -27,6 +27,10 @@ export default class Game {
     this.snakes = [];
     this.player = null; // reference to us, the player
 
+    // Store snake images to optimize rendering.
+    // { snakeId: { name: name_image_data, body: body_image_data }, ...}
+    this.snakeImages = {};
+
     // input management
     this.keyboard = new Keyboard();
     this.mouse = new Mouse({ element: this.canvas, callbackContext: this });
@@ -63,6 +67,30 @@ export default class Game {
 
     // Player actions. a packet of actions to be sent to the websocket server.
     this.actions = [];
+
+    // Save some data about the new snakes that enter the game.
+    this.socket.on("server-new-snake", json => {
+      const { id, name, hue } = JSON.parse(json);
+
+      // create name text canvas
+      const nameCanvas = document.createElement("canvas");
+      const ctx = nameCanvas.getContext("2d");
+      const font = "24px arial";
+
+      ctx.font = font;
+      nameCanvas.width = ctx.measureText(name).width;
+      nameCanvas.height = 30;
+
+      // setting the canvas width reset the context
+      ctx.fillStyle = "white";
+      ctx.textBaseline = "top";
+      ctx.font = font;
+      ctx.fillText(name, 0, 0);
+      this.snakeImages[id] = {
+        color: `hsl(${hue}, 100%, 69%)`,
+        name: nameCanvas
+      };
+    });
 
     // build game
     this.socket.on("server-start-game", json => {

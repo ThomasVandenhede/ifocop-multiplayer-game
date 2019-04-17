@@ -12,9 +12,6 @@ export default class Renderer {
     this.pre.width = this.canvas.width;
     this.pre.height = this.canvas.height;
     this.preCtx = this.pre.getContext("2d");
-    this.preCtx.textAlign = "center";
-    this.preCtx.font = "24px arial";
-    this.snakeNameImages = {};
   }
 
   renderDot(dot, ctx, camera) {
@@ -32,7 +29,9 @@ export default class Renderer {
 
   renderSnake(snake, ctx, camera) {
     const segmentCount = snake.segments.length;
-    const color = `hsl(${snake.hue}, 100%, 69%)`;
+    const snakeImages = this.game.snakeImages[snake.id];
+    const nameImg = snakeImages.name;
+    const color = snakeImages.color;
 
     // draw snake
     ctx.lineCap = ctx.lineJoin = "round";
@@ -57,14 +56,16 @@ export default class Renderer {
       ctx.shadowColor = color;
       ctx.stroke();
       ctx.stroke();
+
+      ctx.shadowBlur = 0; // default
+      ctx.shadowColor = "rgba(0, 0, 0, 0)"; // default
     }
 
     // display player name
-    ctx.fillStyle = "white";
-    ctx.fillText(
-      snake.name,
-      camera.applyToX(snake.x),
-      camera.applyToY(snake.y + snake.radius) + 30
+    ctx.drawImage(
+      nameImg,
+      camera.applyToX(snake.x) - nameImg.width / 2,
+      camera.applyToY(snake.y + snake.radius) + 20
     );
   }
 
@@ -105,10 +106,7 @@ export default class Renderer {
   render() {
     this.clearCanvases();
 
-    this.preCtx.shadowBlur = 0; // default
-    this.preCtx.shadowColor = "rgba(0, 0, 0, 0)"; // default
     this.preCtx.lineWidth = 1; // default
-
     this.game.grid.draw(this.preCtx, this.game.camera);
     this.game.dots.forEach(dot => {
       var boundingRect = new AABB({
