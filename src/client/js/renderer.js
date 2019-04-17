@@ -32,6 +32,7 @@ export default class Renderer {
     const snakeImages = this.game.snakeImages[snake.id];
     const nameImg = snakeImages.name;
     const body = snakeImages.body;
+    const spriteCount = body.width / body.height;
 
     // draw snake
     ctx.lineWidth = camera.applyToDistance(snake.radius * 2);
@@ -40,7 +41,7 @@ export default class Renderer {
       const segment = snake.segments[i];
       ctx.drawImage(
         body,
-        body.height * (i % 40),
+        body.height * (i % spriteCount),
         0,
         body.height,
         body.height,

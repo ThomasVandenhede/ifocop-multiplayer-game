@@ -48,7 +48,7 @@ class Game {
     x = this.world.x + Math.round(Math.cos(utils.degToRad(alpha)) * r);
     y = this.world.y + Math.round(Math.sin(utils.degToRad(alpha)) * r);
 
-    this.pellets.push(new Pellet({ game: this, x, y, mass: 3, hue }));
+    this.pellets.push(new Pellet({ game: this, x, y, size: "s", hue }));
   }
 
   spawnSnake(id, name) {

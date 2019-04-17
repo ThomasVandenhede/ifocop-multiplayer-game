@@ -1,24 +1,26 @@
 const Circle = require("./geometry/circle.js");
 const utils = require("../../shared/utils.js");
 
-const getRadiusFromMass = mass => {
-  if (mass === 1) return 5;
-  if (mass === 3) return 8;
-  if (mass === 10) return 15;
-  if (mass === 50) return 20;
+const getRadiusFromSize = size => {
+  if (size === "xs") return 5;
+  if (size === "s") return 8;
+  if (size === "m") return 15;
+  if (size === "l") return 20;
+};
+
+const getMassFromSize = size => {
+  if (size === "xs") return utils.randInt(12, 14) / 10;
+  if (size === "s") return utils.randInt(6, 40) / 10;
+  if (size === "m") return utils.randInt(10, 12);
+  if (size === "l") return 50;
 };
 
 class Pellet extends Circle {
-  constructor({ game, x = 0, y = 0, mass, hue }) {
-    super(x, y, getRadiusFromMass(mass));
+  constructor({ game, x = 0, y = 0, size, hue }) {
+    super(x, y, getRadiusFromSize(size));
     this.game = game;
 
-    // 1 xs; 3 s; 10 m; 50 l
-    // xs is dropped when a snake is boosting
-    // s is automatically generated
-    // m is dropped when a snake dies
-    // l is a flying pellet
-    this.mass = mass;
+    this.mass = getMassFromSize(size);
     this.type = this.constructor.name;
     this.INITIAL_X = this.x;
     this.INITIAL_Y = this.y;

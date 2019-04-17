@@ -106,7 +106,7 @@ class Snake {
       game: this.game,
       x,
       y,
-      mass: 1,
+      size: "xs",
       hue: this.hue
     });
     this.game.pellets.push(pellet);
