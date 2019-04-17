@@ -28,44 +28,45 @@ export default class Renderer {
   }
 
   renderSnake(snake, ctx, camera) {
-    const segmentCount = snake.segments.length;
+    // const segmentCount = snake.segments.length;
     const snakeImages = this.game.snakeImages[snake.id];
     const nameImg = snakeImages.name;
-    const color = snakeImages.color;
+    const body = snakeImages.body;
 
     // draw snake
-    ctx.lineCap = ctx.lineJoin = "round";
-    ctx.strokeStyle = color;
     ctx.lineWidth = camera.applyToDistance(snake.radius * 2);
 
-    ctx.beginPath();
-    ctx.moveTo(
-      camera.applyToX(snake.segments[segmentCount - 1].x),
-      camera.applyToY(snake.segments[segmentCount - 1].y)
-    );
     for (let i = snake.segments.length - 2; i >= 0; i--) {
       const segment = snake.segments[i];
-      ctx.lineTo(camera.applyToX(segment.x), camera.applyToY(segment.y));
-    }
-    ctx.stroke();
-    if (snake.speed > snake.BASE_SPEED) {
-      const t =
-        (snake.speed - snake.BASE_SPEED) / (snake.MAX_SPEED - snake.BASE_SPEED);
+      ctx.drawImage(
+        body,
+        body.height * (i % 40),
+        0,
+        body.height,
+        body.height,
+        camera.applyToX(segment.x - snake.radius),
+        camera.applyToY(segment.y - snake.radius),
+        camera.applyToDistance(snake.radius * 2),
+        camera.applyToDistance(snake.radius * 2)
+      );
+      if (snake.speed > snake.BASE_SPEED) {
+        const t =
+          (snake.speed - snake.BASE_SPEED) /
+          (snake.MAX_SPEED - snake.BASE_SPEED);
 
-      ctx.shadowBlur = camera.applyToDistance(snake.radius * 4) * t;
-      ctx.shadowColor = color;
-      ctx.stroke();
-      ctx.stroke();
-
-      ctx.shadowBlur = 0; // default
-      ctx.shadowColor = "rgba(0, 0, 0, 0)"; // default
+        ctx.shadowBlur = camera.applyToDistance(50) * t;
+        ctx.shadowColor = "red";
+        ctx.fill();
+      }
     }
+    ctx.shadowBlur = 0; // default
+    ctx.shadowColor = "rgba(0, 0, 0, 0)"; // default
 
     // display player name
     ctx.drawImage(
       nameImg,
       camera.applyToX(snake.x) - nameImg.width / 2,
-      camera.applyToY(snake.y + snake.radius) + 20
+      camera.applyToY(snake.y + snake.radius) + 15
     );
   }
 
