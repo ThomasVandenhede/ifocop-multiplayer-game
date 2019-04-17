@@ -23,6 +23,7 @@ class Dot extends Circle {
     this.INITIAL_X = this.x;
     this.INITIAL_Y = this.y;
     this.INITIAL_RADIUS = this.r;
+    this.r = 0;
     this.hue = hue;
 
     // how much food this dot is worth

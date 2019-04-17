@@ -4,7 +4,7 @@ const utils = require("../../shared/utils");
 const Dot = require("./dot");
 
 class Snake {
-  constructor({ game, id, x = 0, y = 0, name }) {
+  constructor({ game, id, x, y, name }) {
     this.game = game;
 
     this.name = name || "";
@@ -26,8 +26,8 @@ class Snake {
     this.mass = this.INITIAL_MASS = 10;
 
     // positions
-    this.x = x;
-    this.y = y;
+    this.x = x || this.game.world.x;
+    this.y = y || this.game.world.y;
     this.segments = Array.from({ length: 10 }, () => ({ x, y, dir: 0 }));
 
     // speed and acceleration
@@ -84,6 +84,7 @@ class Snake {
       this.mass += dot.mass;
       this.steering =
         (this.INITIAL_STEERING * this.INITIAL_RADIUS) / this.radius;
+      this.game.spawnRandomDot();
     });
   }
 

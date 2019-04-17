@@ -38,6 +38,8 @@ class Game {
   }
 
   spawnRandomDot() {
+    if (this.dots.length >= this.MAX_DOT_COUNT) return;
+
     let x, y, alpha, r;
     let hue = utils.randInt(0, 359);
 
