@@ -20,7 +20,7 @@ class Snake {
 
     // drop food
     this.lastDroppedFoodTime = Date.now();
-    this.dropFoodInterval = 250;
+    this.dropFoodInterval = 1000 / 6; // drop 6 foods per sec
 
     // body mass
     this.mass = this.INITIAL_MASS = 10;
