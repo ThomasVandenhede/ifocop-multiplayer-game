@@ -49,18 +49,18 @@ export default class Renderer {
         camera.applyToDistance(snake.radius * 2),
         camera.applyToDistance(snake.radius * 2)
       );
-      if (snake.speed > snake.BASE_SPEED) {
-        const t =
-          (snake.speed - snake.BASE_SPEED) /
-          (snake.MAX_SPEED - snake.BASE_SPEED);
+      // if (snake.speed > snake.BASE_SPEED) {
+      //   const t =
+      //     (snake.speed - snake.BASE_SPEED) /
+      //     (snake.MAX_SPEED - snake.BASE_SPEED);
 
-        ctx.shadowBlur = camera.applyToDistance(50) * t;
-        ctx.shadowColor = "red";
-        ctx.fill();
-      }
+      //   ctx.shadowBlur = camera.applyToDistance(50) * t;
+      //   ctx.shadowColor = "red";
+      //   ctx.fill();
+      // }
     }
-    ctx.shadowBlur = 0; // default
-    ctx.shadowColor = "rgba(0, 0, 0, 0)"; // default
+    // ctx.shadowBlur = 0; // default
+    // ctx.shadowColor = "rgba(0, 0, 0, 0)"; // default
 
     // display player name
     ctx.drawImage(
