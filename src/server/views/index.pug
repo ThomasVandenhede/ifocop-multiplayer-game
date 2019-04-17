@@ -13,9 +13,10 @@ html(lang='fr')
       #menu-container
         if user
             #play-menu
-              button#logoutButton.btn.btn--danger Déconnexion
+              button#logoutButton.btn.btn--danger.btn--logout
+                img(src='/client/images/on-off-icon.svg')
 
-              ul.user-info.list-reset
+              .user-info
                 h1= user.username
                 table
                   tbody
@@ -32,13 +33,12 @@ html(lang='fr')
                       th
                         | Plus grand nombre de victimes
                       td#user-info-max-kills= user.stats && user.stats.max_kills
-                
-              ul.nav__list.list-reset
-                li.nav__item
-                  button#playButton.btn.btn--big.btn--success Jouer
+
+              button#playButton.btn.btn--big.btn--success Jouer
+                  
         else
           #login-menu
-            ul.nav__list
+            ul.nav__list.list-reset
               li.nav__item
                 button#loginButton.btn.btn--big.btn--success Connexion
               li.nav__item

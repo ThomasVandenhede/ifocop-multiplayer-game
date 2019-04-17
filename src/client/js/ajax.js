@@ -25,7 +25,7 @@ function resetErrorMessages() {
 }
 
 function handleLogout(event) {
-  if (event.target === logoutButton) {
+  if (event.path.includes(logoutButton)) {
     // disconnect and refresh page
     axios.get("/logout").then(res => {
       window.location.reload(); // refresh page

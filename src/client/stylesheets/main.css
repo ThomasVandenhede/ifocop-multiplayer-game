@@ -111,7 +111,7 @@ canvas {
   font: inherit;
   font-weight: bold;
   font-size: 1.2rem;
-  padding: 0.5em 1.5em;
+  padding: 0.7em 1.5em;
   color: #333;
 }
 
@@ -243,8 +243,8 @@ canvas {
 
 #logoutButton {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 1em;
+  right: 1em;
   color: white;
 }
 
@@ -257,12 +257,12 @@ canvas {
   color: white;
   background-color: rgba(90, 90, 90, 0.8);
   box-shadow: inset 0 0.5rem 0 0 rgba(190, 190, 190, 0.8);
-  padding: 30px 10px;
-  min-height: 200px;
+  font-size: 1.2rem;
+  padding: 1em 0.5em;
+  margin-bottom: 1.5em;
   width: 500px;
   max-width: calc(100% - 20px);
   text-align: center;
-  font-size: 1.2rem;
 }
 
 .user-info h1 {
@@ -271,8 +271,8 @@ canvas {
 
 .user-info table {
   margin: auto;
-  width: 400px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 20em;
 }
 
 tr.gap {
@@ -286,4 +286,27 @@ tr.gap {
 .user-info table td {
   text-align: right;
   line-break: normal;
+}
+
+.btn--logout {
+  padding: 0.4em 0.5em 0.3em;
+}
+
+.btn--logout img {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+@media screen and (max-width: 480px) {
+  .user-info {
+    font-size: 1rem;
+  }
+
+  .btn {
+    font-size: 1rem;
+  }
+
+  .btn--big {
+    font-size: 1.3rem;
+  }
 }
