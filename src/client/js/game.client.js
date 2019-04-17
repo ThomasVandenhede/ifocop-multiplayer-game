@@ -23,7 +23,7 @@ export default class Game {
     this.grid = new Grid(100);
 
     // game objects
-    this.dots = [];
+    this.pellets = [];
     this.snakes = [];
     this.player = null; // reference to us, the player
 
@@ -125,12 +125,12 @@ export default class Game {
       this.inGame = true;
 
       const gameState = JSON.parse(json);
-      const { snakes, dots, world } = gameState;
+      const { snakes, pellets, world } = gameState;
       // build game
       this.world = world;
 
-      // build dots
-      this.dots = dots;
+      // build pellets
+      this.pellets = pellets;
 
       // build snakes
       this.snakes = snakes;
@@ -174,7 +174,7 @@ export default class Game {
     });
 
     // Server has updated the game state:
-    // - new dots
+    // - new pellets
     // - snake heads
     // - potential collisions
     this.socket.on("server-update", gameStateJSON => {
@@ -216,7 +216,7 @@ export default class Game {
    * Apply server game state.
    */
   processServerUpdate(gameState) {
-    this.dots = this.decodeDots(gameState.dots);
+    this.pellets = this.decodePellets(gameState.pellets);
 
     this.snakes = this.decodeSnakes(gameState.snakes);
     this.player = this.snakes.find(snake => snake.id === this.socket.id);
@@ -248,18 +248,18 @@ export default class Game {
     return decodedSnakes;
   }
 
-  decodeDots(dots) {
-    const decodedDots = [];
-    for (let i = 0; i < dots.length; i += 4) {
-      decodedDots.push({
-        x: dots[i],
-        y: dots[i + 1],
-        r: dots[i + 2],
-        hue: dots[i + 3],
-        type: "Dot"
+  decodePellets(pellets) {
+    const decodedPellets = [];
+    for (let i = 0; i < pellets.length; i += 4) {
+      decodedPellets.push({
+        x: pellets[i],
+        y: pellets[i + 1],
+        r: pellets[i + 2],
+        hue: pellets[i + 3],
+        type: "Pellet"
       });
     }
-    return decodedDots;
+    return decodedPellets;
   }
 
   preload(...resources) {

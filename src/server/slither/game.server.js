@@ -2,7 +2,7 @@ const GameTimer = require("./gameTimer.js").GameTimer;
 const Snake = require("./snake.js");
 const utils = require("../../shared/utils.js");
 const Circle = require("./geometry/circle.js");
-const Dot = require("./dot.js");
+const Pellet = require("./pellet.js");
 const mongodb = require("mongodb");
 const db = require("../db.js");
 
@@ -30,15 +30,15 @@ class Game {
 
     // Game objects
     this.snakes = [];
-    this.dots = [];
+    this.pellets = [];
     this.MAX_DOT_COUNT = 200;
     for (let i = 0; i < this.MAX_DOT_COUNT; i++) {
-      this.spawnRandomDot();
+      this.spawnRandomPellet();
     }
   }
 
-  spawnRandomDot() {
-    if (this.dots.length >= this.MAX_DOT_COUNT) return;
+  spawnRandomPellet() {
+    if (this.pellets.length >= this.MAX_DOT_COUNT) return;
 
     let x, y, alpha, r;
     let hue = utils.randInt(0, 359);
@@ -48,7 +48,7 @@ class Game {
     x = this.world.x + Math.round(Math.cos(utils.degToRad(alpha)) * r);
     y = this.world.y + Math.round(Math.sin(utils.degToRad(alpha)) * r);
 
-    this.dots.push(new Dot({ game: this, x, y, mass: 3, hue }));
+    this.pellets.push(new Pellet({ game: this, x, y, mass: 3, hue }));
   }
 
   spawnSnake(id, name) {
@@ -83,7 +83,7 @@ class Game {
     const gameState = {
       world: this.world,
       snakes: this.snakes,
-      dots: this.dots
+      pellets: this.pellets
     };
 
     // Avoid circular references
@@ -103,7 +103,7 @@ class Game {
   getGameStateAsJSON() {
     const gameState = {
       snakes: this.encodeSnakes(this.snakes),
-      dots: this.encodeDots(this.dots)
+      pellets: this.encodePellets(this.pellets)
     };
 
     // Avoid circular references
@@ -132,9 +132,9 @@ class Game {
       }));
   }
 
-  encodeDots(dots) {
-    return dots.reduce(
-      (acc, dot) => [...acc, dot.x, dot.y, dot.r, dot.hue],
+  encodePellets(pellets) {
+    return pellets.reduce(
+      (acc, pellet) => [...acc, pellet.x, pellet.y, pellet.r, pellet.hue],
       []
     );
   }
@@ -151,7 +151,7 @@ class Game {
     this.handleClientInput();
 
     this.snakes.forEach(snake => snake.update(dt));
-    this.dots.forEach(dot => dot.update(dt));
+    this.pellets.forEach(pellet => pellet.update(dt));
 
     this.sendUpdate();
   }

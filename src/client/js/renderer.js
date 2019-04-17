@@ -14,13 +14,13 @@ export default class Renderer {
     this.preCtx = this.pre.getContext("2d");
   }
 
-  renderDot(dot, ctx, camera) {
-    ctx.fillStyle = `hsl(${dot.hue}, 100%, 69%)`;
+  renderPellet(pellet, ctx, camera) {
+    ctx.fillStyle = `hsl(${pellet.hue}, 100%, 69%)`;
     ctx.beginPath();
     ctx.arc(
-      camera.applyToX(dot.x),
-      camera.applyToY(dot.y),
-      camera.applyToDistance(dot.r),
+      camera.applyToX(pellet.x),
+      camera.applyToY(pellet.y),
+      camera.applyToDistance(pellet.r),
       0,
       PI2
     );
@@ -109,15 +109,15 @@ export default class Renderer {
 
     this.preCtx.lineWidth = 1; // default
     this.game.grid.draw(this.preCtx, this.game.camera);
-    this.game.dots.forEach(dot => {
+    this.game.pellets.forEach(pellet => {
       var boundingRect = new AABB({
-        x: dot.x - dot.r,
-        y: dot.y - dot.r,
-        width: dot.r * 2,
-        height: dot.r * 2
+        x: pellet.x - pellet.r,
+        y: pellet.y - pellet.r,
+        width: pellet.r * 2,
+        height: pellet.r * 2
       });
       if (boundingRect.overlaps(this.game.camera)) {
-        this.renderDot(dot, this.preCtx, this.game.camera);
+        this.renderPellet(pellet, this.preCtx, this.game.camera);
       }
     });
     this.game.snakes.forEach(snake =>

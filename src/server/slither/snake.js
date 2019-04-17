@@ -1,7 +1,7 @@
 const Vector = require("./geometry/vector");
 const Circle = require("./geometry/circle");
 const utils = require("../../shared/utils");
-const Dot = require("./dot");
+const Pellet = require("./pellet");
 
 class Snake {
   constructor({ game, id, x, y, name }) {
@@ -18,9 +18,9 @@ class Snake {
 
     this.isDead = false;
 
-    // drop food
-    this.lastDroppedFoodTime = Date.now();
-    this.dropFoodInterval = 1000 / 6; // drop 6 foods per sec
+    // drop pellet
+    this.lastDroppedPelletTime = Date.now();
+    this.pelletDropInterval = 1000 / 6; // drop 6 pellets per sec
 
     // body mass
     this.mass = this.INITIAL_MASS = 10;
@@ -78,21 +78,21 @@ class Snake {
     this.game.handleGameOver(this.id);
   }
 
-  eatFood(index) {
-    const dot = this.game.dots[index];
-    dot.destroy(this, () => {
-      this.mass += dot.mass;
+  eatPellet(index) {
+    const pellet = this.game.pellets[index];
+    pellet.destroy(this, () => {
+      this.mass += pellet.mass;
       this.steering =
         (this.INITIAL_STEERING * this.INITIAL_RADIUS) / this.radius;
-      this.game.spawnRandomDot();
+      this.game.spawnRandomPellet();
     });
   }
 
   /**
-   * Drop one piece of food from the snake's tail.
+   * Drop one pellet from the snake's tail.
    */
-  dropFood() {
-    // determine food coordinates
+  dropPellet() {
+    // determine pellet coordinates
     const tail = this.segments[this.segments.length - 1];
     const x = Math.round(
       tail.x - this.radius * Math.cos((tail.dir * Math.PI * 2) / 360)
@@ -101,22 +101,28 @@ class Snake {
       tail.y - this.radius * Math.sin((tail.dir * Math.PI * 2) / 360)
     );
 
-    // add food to the world
-    const dot = new Dot({ game: this.game, x, y, mass: 1, hue: this.hue });
-    this.game.dots.push(dot);
+    // add pellet to the world
+    const pellet = new Pellet({
+      game: this.game,
+      x,
+      y,
+      mass: 1,
+      hue: this.hue
+    });
+    this.game.pellets.push(pellet);
 
     // decrease mass
-    this.mass -= dot.mass;
+    this.mass -= pellet.mass;
 
     // save timestamp
-    this.lastDroppedFoodTime = Date.now();
+    this.lastDroppedPelletTime = Date.now();
   }
 
   /**
-   * Convert body mass to food and drop that food at random locations along the body.
+   * Convert body mass to pellets.
    */
-  dropAllFood() {
-    console.log("dropping food");
+  dropAllPellets() {
+    console.log("dropping pellets");
     for (let i = 0; i < this.segments.length - 1; i++) {
       const segment = this.segments[i];
       const x = segment.x;
@@ -132,12 +138,12 @@ class Snake {
     // forbid boosting when player is too small
     if (this.mass <= this.INITIAL_MASS) this.isBoosting = false;
 
-    // periodically drop food when player is boosting
+    // periodically drop pellets when player is boosting
     if (
       this.isBoosting &&
-      Date.now() - this.lastDroppedFoodTime >= this.dropFoodInterval
+      Date.now() - this.lastDroppedPelletTime >= this.pelletDropInterval
     ) {
-      this.dropFood();
+      this.dropPellet();
     }
 
     // accelerate or brake
@@ -219,10 +225,10 @@ class Snake {
       this.detectCollisionWithBoundary()
     ) {
       this.die();
-      this.dropAllFood();
+      this.dropAllPellets();
       return;
     }
-    this.detectCollisionWithDots();
+    this.detectCollisionWithPellets();
   }
 
   detectCollisionWithOpponents() {
@@ -250,9 +256,9 @@ class Snake {
     return !this.game.world.containsPoint(this.forehead.x, this.forehead.y);
   }
 
-  detectCollisionWithDots() {
-    // test head collision with dots
-    // We're removing dots while iterating, hence the revoersed
+  detectCollisionWithPellets() {
+    // test head collision with pellets
+    // We're removing pellets while iterating, hence the revoersed
     // iteration order, to avoid missing indices.
     const dirRad = (this.dir * Math.PI * 2) / 360;
     const suckRadius = 1.75 * this.radius;
@@ -261,13 +267,14 @@ class Snake {
       this.y + (suckRadius - this.radius) * Math.sin(dirRad),
       suckRadius
     );
-    for (let index = this.game.dots.length - 1; index >= 0; index--) {
-      const dot = this.game.dots[index];
+    for (let index = this.game.pellets.length - 1; index >= 0; index--) {
+      const pellet = this.game.pellets[index];
       if (
-        Math.pow(dot.x - suckCircle.x, 2) + Math.pow(dot.y - suckCircle.y, 2) <
-        Math.pow(suckCircle.r + dot.r, 2)
+        Math.pow(pellet.x - suckCircle.x, 2) +
+          Math.pow(pellet.y - suckCircle.y, 2) <
+        Math.pow(suckCircle.r + pellet.r, 2)
       ) {
-        this.eatFood(index);
+        this.eatPellet(index);
       }
     }
   }

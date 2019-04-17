@@ -8,7 +8,7 @@ const getRadiusFromMass = mass => {
   if (mass === 50) return 20;
 };
 
-class Dot extends Circle {
+class Pellet extends Circle {
   constructor({ game, x = 0, y = 0, mass, hue }) {
     super(x, y, getRadiusFromMass(mass));
     this.game = game;
@@ -17,7 +17,7 @@ class Dot extends Circle {
     // xs is dropped when a snake is boosting
     // s is automatically generated
     // m is dropped when a snake dies
-    // l is a flying dot
+    // l is a flying pellet
     this.mass = mass;
     this.type = this.constructor.name;
     this.INITIAL_X = this.x;
@@ -26,7 +26,7 @@ class Dot extends Circle {
     this.r = 0;
     this.hue = hue;
 
-    // how much food this dot is worth
+    // how much length this pellet is worth
     this.value = utils.randInt(10, 20);
 
     // timings
@@ -34,7 +34,7 @@ class Dot extends Circle {
 
     // spawn animation
     this.isSpawning = true;
-    this.spawnDuration = 300; // dot takes this long to reach full size
+    this.spawnDuration = 300; // pellet takes this long to reach full size
 
     // die animation
     this.deathTime = null;
@@ -86,11 +86,11 @@ class Dot extends Circle {
       }
 
       if (this.isDead) {
-        // remove dot
-        const index = this.game.dots.indexOf(this);
-        this.game.dots = [
-          ...this.game.dots.slice(0, index),
-          ...this.game.dots.slice(index + 1)
+        // remove pellet
+        const index = this.game.pellets.indexOf(this);
+        this.game.pellets = [
+          ...this.game.pellets.slice(0, index),
+          ...this.game.pellets.slice(index + 1)
         ];
         this.dieCallback();
       }
@@ -98,4 +98,4 @@ class Dot extends Circle {
   }
 }
 
-module.exports = Dot;
+module.exports = Pellet;
