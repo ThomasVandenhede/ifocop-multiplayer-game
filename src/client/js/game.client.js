@@ -37,8 +37,7 @@ export default class Game {
     this.mouse.mouseMoveCallback = function() {
       const mouseCenterOffsetX = this.mouse.x - this.canvas.width / 2;
       const mouseCenterOffsetY = this.mouse.y - this.canvas.height / 2;
-      const dir =
-        (Math.atan2(mouseCenterOffsetY, mouseCenterOffsetX) / PI2) * 360;
+      const dir = Math.atan2(mouseCenterOffsetY, mouseCenterOffsetX);
 
       this.actions.push({
         frameDuration: this.dt,
@@ -224,8 +223,8 @@ export default class Game {
     if (!this.player) return;
 
     // update camera
-    this.camera.zoomLevel =
-      1.15 * Math.pow(this.player.INITIAL_RADIUS / this.player.radius, 1 / 2);
+    const ratio = this.player.radius / this.player.INITIAL_RADIUS;
+    this.camera.zoomLevel = 1.15 * Math.pow(ratio, -0.3);
     this.camera.update();
     this.camera.center(this.player.segments[0].x, this.player.segments[0].y);
   }

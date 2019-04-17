@@ -12,11 +12,12 @@ const utils = {
   lerp(v0, v1, t) {
     return (1 - t) * v0 + t * v1;
   },
-  absAngleWithin180(angle) {
-    let absWithin360 = angle % 360;
-    if (absWithin360 > 180) return absWithin360 - 360;
-    if (absWithin360 < -180) return absWithin360 + 360;
-    return absWithin360;
+  absLessThanPI(angle) {
+    const PI2 = Math.PI * 2;
+    let absWithin2PI = angle % PI2;
+    if (absWithin2PI > Math.PI) return absWithin2PI - PI2;
+    if (absWithin2PI < -Math.PI) return absWithin2PI + PI2;
+    return absWithin2PI;
   },
   // CREDIT: https://stackoverflow.com/questions/2353211/hsl-to-rgb-color-conversion
   hslToRgb(h, s, l) {

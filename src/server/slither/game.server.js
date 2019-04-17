@@ -12,7 +12,7 @@ class Game {
     this.io = io;
 
     // Game world
-    this.world = new Circle(0, 0, 4000);
+    this.world = new Circle(0, 0, 2000);
     this.world.type = "World";
 
     // Game timer
@@ -31,14 +31,14 @@ class Game {
     // Game objects
     this.snakes = [];
     this.pellets = [];
-    this.MAX_DOT_COUNT = 200;
-    for (let i = 0; i < this.MAX_DOT_COUNT; i++) {
+    this.MAX_PELLET_COUNT = 200;
+    for (let i = 0; i < this.MAX_PELLET_COUNT; i++) {
       this.spawnRandomPellet();
     }
   }
 
   spawnRandomPellet() {
-    if (this.pellets.length >= this.MAX_DOT_COUNT) return;
+    if (this.pellets.length >= this.MAX_PELLET_COUNT) return;
 
     let x, y, alpha, r;
     let hue = utils.randInt(0, 359);
@@ -150,8 +150,8 @@ class Game {
 
     this.handleClientInput();
 
-    this.snakes.forEach(snake => snake.update(dt));
     this.pellets.forEach(pellet => pellet.update(dt));
+    this.snakes.forEach(snake => snake.update(dt));
 
     this.sendUpdate();
   }
@@ -170,10 +170,12 @@ class Game {
         this.clientInput[socketID].forEach(action => {
           const { frameDuration, command, data } = action;
           if (command === "RIGHT") {
-            player.target = player.dir += player.steering * frameDuration;
+            player.target = player.dir +=
+              (player.steering / 180) * Math.PI * frameDuration;
           }
           if (command === "LEFT") {
-            player.target = player.dir -= player.steering * frameDuration;
+            player.target = player.dir -=
+              (player.steering / 180) * Math.PI * frameDuration;
           }
           if (command === "BOOST_START") {
             player.isBoosting = true;

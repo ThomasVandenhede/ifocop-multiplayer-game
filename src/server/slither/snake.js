@@ -33,7 +33,7 @@ class Snake {
     // speed and acceleration
     this.speed = this.BASE_SPEED = 150;
     this.MAX_SPEED = 400;
-    this.steering = this.INITIAL_STEERING = 250;
+    this.steering = this.INITIAL_STEERING = 250 * (Math.PI / 180);
     this.isBoosting = false;
 
     // size
@@ -62,8 +62,8 @@ class Snake {
   // that should NOT collide with other snakes nor leave the game area.
   get forehead() {
     return new Vector(
-      this.head.x + Math.cos(utils.degToRad(this.dir)) * this.radius,
-      this.head.y + Math.sin(utils.degToRad(this.dir)) * this.radius
+      this.head.x + Math.cos(this.dir) * this.radius,
+      this.head.y + Math.sin(this.dir) * this.radius
     );
   }
 
@@ -94,12 +94,8 @@ class Snake {
   dropPellet() {
     // determine pellet coordinates
     const tail = this.segments[this.segments.length - 1];
-    const x = Math.round(
-      tail.x - this.radius * Math.cos((tail.dir * Math.PI * 2) / 360)
-    );
-    const y = Math.round(
-      tail.y - this.radius * Math.sin((tail.dir * Math.PI * 2) / 360)
-    );
+    const x = Math.round(tail.x - this.radius * Math.cos(tail.dir));
+    const y = Math.round(tail.y - this.radius * Math.sin(tail.dir));
 
     // add pellet to the world
     const pellet = new Pellet({
@@ -153,24 +149,24 @@ class Snake {
 
     // update direction (angle)
     if (this.target !== this.dir) {
-      if (utils.absAngleWithin180(this.target - this.dir) < 0) {
+      if (utils.absLessThanPI(this.target - this.dir) < 0) {
         this.dir -= this.steering * dt;
       }
-      if (utils.absAngleWithin180(this.target - this.dir) > 0) {
+      if (utils.absLessThanPI(this.target - this.dir) > 0) {
         this.dir += this.steering * dt;
       }
-      this.dir = utils.toFixedPrecision(utils.absAngleWithin180(this.dir), 2);
+      this.dir = utils.toFixedPrecision(utils.absLessThanPI(this.dir), 2);
     }
 
     // move snake's head (which also happens to be the snakes location)
-    const dx = Math.cos(utils.degToRad(this.dir)) * this.speed * dt;
-    const dy = Math.sin(utils.degToRad(this.dir)) * this.speed * dt;
+    const dx = Math.cos(this.dir) * this.speed * dt;
+    const dy = Math.sin(this.dir) * this.speed * dt;
     this.x = utils.toFixedPrecision((this.head.x += dx), 2);
     this.y = utils.toFixedPrecision((this.head.y += dy), 2);
     this.head.dir = this.dir;
 
     // update radius
-    this.radius = this.INITIAL_RADIUS + (this.mass - this.INITIAL_MASS) * 0.1;
+    this.radius = this.INITIAL_RADIUS + (this.mass - this.INITIAL_MASS) * 0.05;
 
     // update length
     const length = Math.ceil((this.mass / this.radius) * 15);
@@ -203,14 +199,9 @@ class Snake {
         );
       }
       // work out the snake's body part direction
-      this.segments[i].dir = utils.toFixedPrecision(
-        (Math.atan2(
-          this.segments[i - 1].y - this.segments[i].y,
-          this.segments[i - 1].x - this.segments[i].x
-        ) *
-          360) /
-          (Math.PI * 2),
-        2
+      this.segments[i].dir = Math.atan2(
+        this.segments[i - 1].y - this.segments[i].y,
+        this.segments[i - 1].x - this.segments[i].x
       );
     }
 
@@ -260,11 +251,10 @@ class Snake {
     // test head collision with pellets
     // We're removing pellets while iterating, hence the revoersed
     // iteration order, to avoid missing indices.
-    const dirRad = (this.dir * Math.PI * 2) / 360;
     const suckRadius = 1.75 * this.radius;
     const suckCircle = new Circle(
-      this.x + (suckRadius - this.radius) * Math.cos(dirRad),
-      this.y + (suckRadius - this.radius) * Math.sin(dirRad),
+      this.x + (suckRadius - this.radius) * Math.cos(this.dir),
+      this.y + (suckRadius - this.radius) * Math.sin(this.dir),
       suckRadius
     );
     for (let index = this.game.pellets.length - 1; index >= 0; index--) {
