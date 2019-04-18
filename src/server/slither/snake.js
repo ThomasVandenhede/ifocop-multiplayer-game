@@ -82,6 +82,7 @@ class Snake {
     const pellet = this.game.pellets[index];
     pellet.destroy(this, () => {
       this.mass += pellet.mass;
+      this.mass = utils.toFixedPrecision(this.mass, 1);
       this.steering =
         (this.INITIAL_STEERING * this.INITIAL_RADIUS) / this.radius;
       this.game.spawnRandomPellet();
@@ -109,6 +110,7 @@ class Snake {
 
     // decrease mass
     this.mass -= pellet.mass;
+    this.mass = utils.toFixedPrecision(this.mass, 1);
 
     // save timestamp
     this.lastDroppedPelletTime = Date.now();
