@@ -31,7 +31,9 @@ function Mouse({ element, callbackContext }) {
 
   window.addEventListener("contextmenu", function(event) {
     event.preventDefault ? event.preventDefault() : (event.returnValue = false);
-    this.contextMenuCallback.call(callbackContext, event);
+    if (typeof this.contextMenuCallback === "function") {
+      this.contextMenuCallback.call(callbackContext, event);
+    }
   });
 
   window.addEventListener(
@@ -42,7 +44,7 @@ function Mouse({ element, callbackContext }) {
 
       this.buttons[event.button] = true;
 
-      this.mouseDownCallback &&
+      typeof this.mouseDownCallback === "function" &&
         this.mouseDownCallback.call(callbackContext, event);
     }.bind(this)
   );
@@ -54,7 +56,8 @@ function Mouse({ element, callbackContext }) {
       this.releaseY = event.clientY + this.element.offsetTop;
       this.buttons[event.button] = false;
 
-      this.mouseUpCallback && this.mouseUpCallback.call(callbackContext, event);
+      typeof this.mouseUpCallback === "function" &&
+        this.mouseUpCallback.call(callbackContext, event);
     }.bind(this)
   );
 
@@ -65,7 +68,7 @@ function Mouse({ element, callbackContext }) {
       this.x = event.clientX + this.element.offsetLeft;
       this.y = event.clientY + this.element.offsetTop;
 
-      this.mouseMoveCallback &&
+      typeof this.mouseMoveCallback === "function" &&
         this.mouseMoveCallback.call(callbackContext, event);
     }.bind(this)
   );
@@ -74,6 +77,9 @@ function Mouse({ element, callbackContext }) {
     "wheel",
     function(event) {
       var deltaY = event.deltaY;
+
+      typeof this.mouseWheelCallback === "function" &&
+        this.mouseWheelCallback.call(callbackContext, event);
     }.bind(this)
   );
 }
