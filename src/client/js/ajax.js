@@ -3,7 +3,6 @@
  */
 const loginForm = document.getElementById("loginForm");
 const signupForm = document.getElementById("signupForm");
-const logoutButton = document.getElementById("logoutButton");
 
 loginForm.addEventListener("submit", handleLogin);
 signupForm.addEventListener("submit", handleSignup);
@@ -25,7 +24,8 @@ function resetErrorMessages() {
 }
 
 function handleLogout(event) {
-  if (event.composedPath().includes(logoutButton)) {
+  const logoutButton = document.getElementById("logoutButton");
+  if (event.target === logoutButton) {
     // disconnect and refresh page
     axios.get("/logout").then(res => {
       window.location.reload(); // refresh page
