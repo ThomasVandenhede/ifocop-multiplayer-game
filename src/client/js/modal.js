@@ -1,13 +1,11 @@
-const loginButton = document.getElementById("loginButton");
-const signupButton = document.getElementById("signupButton");
-const loginModal = document.getElementById("loginModal");
-const loginModalClose = document.querySelector("#loginModal .close");
-const signupModal = document.getElementById("signupModal");
-const signupModalClose = document.querySelector("#signupModal .close");
-
-const loginNav = document.getElementById("");
-
 window.addEventListener("click", function(event) {
+  const loginButton = document.getElementById("loginButton");
+  const signupButton = document.getElementById("signupButton");
+  const loginModal = document.getElementById("loginModal");
+  const loginModalClose = document.querySelector("#loginModal .close");
+  const signupModal = document.getElementById("signupModal");
+  const signupModalClose = document.querySelector("#signupModal .close");
+
   // show login modal
   if (event.target === loginButton) {
     loginModal.classList.add("is-open");

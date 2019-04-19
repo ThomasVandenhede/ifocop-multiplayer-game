@@ -236,7 +236,7 @@ canvas {
   margin-bottom: 1rem;
 }
 
-.error-message {
+form .error-message {
   display: none;
   color: red;
 }

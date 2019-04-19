@@ -58,39 +58,40 @@ html(lang='fr')
               span Ton rang : 
               strong#rank
 
-    #loginModal.modal
-      // Modal content
-      .modal-content
-        span.close ×
-        form#loginForm.form
-          p
-            label(for='username') Pseudo
-            input(type='text', name='username', required='' autocomplete="username")
-          p#username-error.error-message
-            | Cet identifiant n'existe pas
-          p
-            label(for='password') Mot de passe
-            input(type='password', name='password', required='' autocomplete="current-password")
-          p#password-error.error-message
-            | Mot de passe incorrect
-          p
-            button.btn.btn--success Se connecter
+    if !user
+      #loginModal.modal
+        // Modal content
+        .modal-content
+          span.close ×
+          form#loginForm.form
+            p
+              label(for='username') Pseudo
+              input(type='text', name='username', required='' autocomplete="username")
+            p#username-error.error-message
+              | Cet identifiant n'existe pas
+            p
+              label(for='password') Mot de passe
+              input(type='password', name='password', required='' autocomplete="current-password")
+            p#password-error.error-message
+              | Mot de passe incorrect
+            p
+              button.btn.btn--success Se connecter
 
-    #signupModal.modal
-      // Modal content
-      .modal-content
-        span.close ×
-        form#signupForm.form(autocomplete="off")
-          p
-            label(for='username') Pseudo
-            input(type='text', name='username', required='' autocomplete='off')
-          p#username-signup-error.error-message
-            | Identifiant déjà pris
-          p
-            label(for='password') Mot de passe
-            input(type='password', name='password', required='' autocomplete='new-password')
-          p
-            button.btn.btn--success Créer un compte
+      #signupModal.modal
+        // Modal content
+        .modal-content
+          span.close ×
+          form#signupForm.form(autocomplete="off")
+            p
+              label(for='username') Pseudo
+              input(type='text', name='username', required='' autocomplete='off')
+            p#username-signup-error.error-message
+              | Identifiant déjà pris
+            p
+              label(for='password') Mot de passe
+              input(type='password', name='password', required='' autocomplete='new-password')
+            p
+              button.btn.btn--success Créer un compte
 
     //- vendor
     script(src='https://unpkg.com/axios/dist/axios.min.js')

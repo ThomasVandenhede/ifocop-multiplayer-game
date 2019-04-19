@@ -3,10 +3,11 @@
  */
 const loginForm = document.getElementById("loginForm");
 const signupForm = document.getElementById("signupForm");
+const logoutButton = document.getElementById("logoutButton");
 
-loginForm.addEventListener("submit", handleLogin);
-signupForm.addEventListener("submit", handleSignup);
-window.addEventListener("click", handleLogout);
+loginForm && loginForm.addEventListener("submit", handleLogin);
+signupForm && signupForm.addEventListener("submit", handleSignup);
+logoutButton && logoutButton.addEventListener("click", handleLogout);
 
 function getFormData(formEl) {
   const formData = new FormData(formEl);
@@ -24,13 +25,10 @@ function resetErrorMessages() {
 }
 
 function handleLogout(event) {
-  const logoutButton = document.getElementById("logoutButton");
-  if (event.target === logoutButton) {
-    // disconnect and refresh page
-    axios.get("/logout").then(res => {
-      window.location.reload(); // refresh page
-    });
-  }
+  // disconnect and refresh page
+  axios.get("/logout").then(res => {
+    window.location.reload(); // refresh page
+  });
 }
 
 function handleLogin(event) {
