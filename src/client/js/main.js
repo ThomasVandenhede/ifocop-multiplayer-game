@@ -26,7 +26,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const playButton = document.getElementById("playButton");
 
     if (event.target === playButton) {
-      window.animatedBackground.stop();
       game.requestJoin();
     }
   });

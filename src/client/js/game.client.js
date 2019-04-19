@@ -118,8 +118,32 @@ export default class Game {
       };
     });
 
+    // connection refused due to another connection being already open on the same session
+    this.socket.on("server-unauthorized", () => {
+      const unauthorizedEl = document.getElementById("unauthorized-warning");
+      const userInfo = document.getElementById("user-info");
+      const playButton = document.getElementById("playButton");
+
+      userInfo.style.display = "none";
+      playButton.style.display = "none";
+      unauthorizedEl.style.display = "block";
+    });
+
     // build game
     this.socket.on("server-start-game", json => {
+      window.animatedBackground.stop();
+
+      const menuContainer = document.getElementById("menu-container");
+      const gameContainer = document.getElementById("game-container");
+      window.ontransitionend = () => {
+        menuContainer.style.display = "none";
+        window.ontransitionend = null;
+      };
+      menuContainer.classList.add("fade-out");
+
+      gameContainer.style.display = "block";
+
+      //
       this.joinRequested = false;
       this.inGame = true;
 
@@ -183,6 +207,8 @@ export default class Game {
   }
 
   requestJoin() {
+    this.joinRequested = false;
+
     // do not allow requesting twice!
     if (this.joinRequested || this.inGame) return;
 
@@ -194,16 +220,6 @@ export default class Game {
   }
 
   join() {
-    this.joinRequested = false;
-    const menuContainer = document.getElementById("menu-container");
-    const gameContainer = document.getElementById("game-container");
-    window.ontransitionend = () => {
-      menuContainer.style.display = "none";
-      window.ontransitionend = null;
-    };
-    menuContainer.classList.add("fade-out");
-
-    gameContainer.style.display = "block";
     this.socket.emit("client-join-game");
   }
 
@@ -391,9 +407,9 @@ export default class Game {
 
   stop() {
     // stop render loop
-    this.renderLoop.stop();
+    this.renderLoop && this.renderLoop.stop();
 
     // stop score loop
-    this.scoreLoop.stop();
+    this.scoreLoop && this.scoreLoop.stop();
   }
 }

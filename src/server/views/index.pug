@@ -16,7 +16,7 @@ html(lang='fr')
               button#logoutButton.btn.btn--danger.btn--logout
                 img(src='/client/images/on-off-icon.svg')
 
-              .user-info
+              #user-info.info.user-info
                 h1= user.username
                 table
                   tbody
@@ -35,6 +35,9 @@ html(lang='fr')
                       td#user-info-max-kills= user.stats && user.stats.max_kills
 
               button#playButton.btn.btn--big.btn--success Jouer
+              
+              #unauthorized-warning.info(style="display: none;")
+                p Vous ne pouvez vous connecter qu'une seule fois avec le même compte.
                   
         else
           #login-menu

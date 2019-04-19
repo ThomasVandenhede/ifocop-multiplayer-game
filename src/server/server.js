@@ -87,11 +87,42 @@ io.use(
   })
 );
 
+function checkSessionAlreadyOpen(socket) {
+  return !!Object.keys(connections).find(key => {
+    const conn = connections[key];
+
+    // filter out the socket passed as argument
+    if (conn.id !== socket.id) {
+      // we check if another ws connection is attached to the same session
+      if (
+        conn.handshake.session &&
+        socket.handshake.session &&
+        conn.handshake.session.userID === socket.handshake.session.userID
+      ) {
+        return true;
+      }
+      return false;
+    }
+  });
+}
+
 io.on("connection", socket => {
   console.log("new connection: ", socket.id);
-
   connections[socket.id] = socket;
 
+  // If another connection is already open on the same session inform the client and it and tell them they can't join the game.
+  const alreadyOpen = checkSessionAlreadyOpen(socket);
+
+  if (alreadyOpen) {
+    socket.emit("server-unauthorized");
+    delete connections[socket.id];
+    socket.disconnect();
+    return;
+  }
+
+  /**
+   * Clients wants to enter.
+   */
   socket.on("client-join-game", viewport => {
     if (socket.handshake.session.userID) {
       db.getInstance()
@@ -114,20 +145,29 @@ io.on("connection", socket => {
     }
   });
 
+  /**
+   * Handle input messages from client.
+   */
   socket.on("client-input", ({ actions }) => {
-    // Organize player input by socket ID.
     game.clientInput[socket.id] = [
       ...(game.clientInput[socket.id] || []),
       ...actions
     ];
   });
 
+  /**
+   * Client is ready to leave the game.
+   */
   socket.on("client-leave-game", () => {
     socket.leave("game");
     console.log(`player ${socket.id} has left the game`);
   });
 
+  /**
+   * Automatically emitted when client disconnects.
+   */
   socket.on("disconnect", () => {
+    console.log("disconnection: " + socket.id);
     delete connections[socket.id];
     game.removePlayer(socket.id);
     game.io.emit("server-disconnect", socket.id);
