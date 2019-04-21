@@ -1,15 +1,14 @@
 const express = require("express");
 const app = express();
-const http = require("http").Server(app);
+const server = require("http").Server(app);
 const path = require("path");
 const bodyParser = require("body-parser");
-const session = require("express-session");
-const MongoStore = require("connect-mongo")(session);
+const sessionParser = require("express-session");
+const MongoStore = require("connect-mongo")(sessionParser);
 const indexRoute = require("./routing/index.js");
-const logger = require("morgan");
 const createError = require("http-errors");
-const mongodb = require("mongodb");
 const db = require("./db.js");
+const mongodb = require("mongodb");
 
 /**
  * HTTP SERVER
@@ -20,7 +19,7 @@ const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const PORT_NUMBER = process.env.PORT || 3000;
 
 // middleware
-app.use(logger("dev"));
+// app.use(logger("dev"));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
@@ -29,7 +28,7 @@ app.set("views", path.join(__dirname, "/views"));
 app.set("view engine", "pug");
 
 // session setup
-const sess = session({
+const session = sessionParser({
   secret: "my-secret",
   resave: true,
   saveUninitialized: true,
@@ -37,7 +36,7 @@ const sess = session({
     url: MONGODB_URI
   })
 });
-app.use(sess);
+app.use(session);
 
 // static files
 app.use("/client", express.static(path.join(__dirname, "../client")));
@@ -62,7 +61,7 @@ app.use((err, req, res, next) => {
 
 db.connect(MONGODB_URI, err => {
   if (!err) {
-    http.listen(PORT_NUMBER, () => {
+    server.listen(PORT_NUMBER, () => {
       console.log("listening on *:%d", PORT_NUMBER);
       game.step();
     });
@@ -74,30 +73,122 @@ db.connect(MONGODB_URI, err => {
 /**
  * WEBSOCKET SERVER
  */
-const io = require("socket.io")(http);
-const sharedsession = require("express-socket.io-session");
+const uuid = require("uuid");
+const WebSocket = require("ws");
+const wss = new WebSocket.Server({
+  verifyClient: (info, done) => {
+    console.log("Parsing session from request...");
+    session(info.req, {}, () => {
+      console.log("Session is parsed!");
+      done(info.req.session.userId);
+    });
+  },
+  server
+});
 const Game = require("./slither/game.server.js").Game;
+const game = new Game(wss);
+const clients = {
+  // room system
+  // by default, all clients are in the default room
+  default: {}
+};
 
-const game = new Game(io);
-const connections = {};
+/**
+ * Send to all connected clients.
+ * @param {*} data
+ */
+wss.send = function(data) {
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(data);
+    }
+  });
+};
 
-io.use(
-  sharedsession(sess, {
-    autoSave: true
-  })
-);
+/**
+ * Find socket by id.
+ * @param {*} id
+ */
+wss.client = function(id) {
+  return clients.default[id];
+};
 
-function checkSessionAlreadyOpen(socket) {
-  return !!Object.keys(connections).find(key => {
-    const conn = connections[key];
+/**clients
+ * Send to all clients within a room.
+ */
+wss.to = function(roomName) {
+  const room = clients[roomName] || {};
+  const roomClients = new Set(Object.values(room));
 
-    // filter out the socket passed as argument
-    if (conn.id !== socket.id) {
+  return {
+    // array containing all clients within the room
+    send: data => {
+      roomClients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(data);
+        }
+      });
+    },
+    client: id => {
+      roomClients.find(client => client.id === id);
+    }
+  };
+};
+
+wss.attachMethods = function(ws) {
+  /**
+   * Send message to all open connexions except the current one.
+   */
+  ws.broadcast = function(data) {
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN && client.id !== ws.id) {
+        client.send(data);
+      }
+    });
+  };
+
+  /**
+   * Join a room.
+   */
+  ws.join = function(roomName) {
+    if (!roomName) return;
+
+    if (!clients[roomName]) {
+      clients[roomName] = {};
+    }
+    clients[roomName][ws.id] = ws;
+  };
+
+  /**
+   * Leave a room.
+   */
+  ws.leave = function(roomName) {
+    if (!roomName || !clients[roomName] || !clients[roomName][ws.id]) return;
+
+    // leave room
+    delete clients[roomName][ws.id];
+
+    // if room is empty, delete the room
+    if (!Object.keys(clients[roomName]).length) delete clients[roomName];
+  };
+  return ws;
+};
+
+/**
+ * Check if another connection is already open on the same session.
+ * @param {object} ws
+ */
+function sessionAlreadyOpen(ws) {
+  return !!Object.keys(clients.default).find(key => {
+    const client = clients.default[key];
+
+    // filter out the ws passed as argument
+    if (client.id !== ws.id) {
       // we check if another ws connection is attached to the same session
       if (
-        conn.handshake.session &&
-        socket.handshake.session &&
-        conn.handshake.session.userID === socket.handshake.session.userID
+        client.session &&
+        ws.session &&
+        client.session.userId === ws.session.userId
       ) {
         return true;
       }
@@ -106,70 +197,94 @@ function checkSessionAlreadyOpen(socket) {
   });
 }
 
-io.on("connection", socket => {
-  console.log("new connection: ", socket.id);
-  connections[socket.id] = socket;
+wss.on("connection", function(ws, req) {
+  // Attach the active session to the current ws object.
+  ws.session = req.session;
 
-  // If another connection is already open on the same session inform the client and it and tell them they can't join the game.
-  const alreadyOpen = checkSessionAlreadyOpen(socket);
+  // Attach a unique id to the current ws object
+  ws.id = uuid.v4();
+  clients.default[ws.id] = ws;
+  ws.send(JSON.stringify({ type: "s-socket-id", payload: ws.id }));
 
-  if (alreadyOpen) {
-    socket.emit("server-unauthorized");
-    delete connections[socket.id];
-    socket.disconnect();
-    return;
+  // Add additional methods to the current ws object
+  wss.attachMethods(ws);
+
+  console.log(`New connection ${ws.id}`);
+
+  if (sessionAlreadyOpen(ws)) {
+    ws.send(JSON.stringify({ type: "s-unauthorized" }));
+  } else {
+    ws.send(JSON.stringify({ type: "s-authorized" }));
   }
 
-  /**
-   * Clients wants to enter.
-   */
-  socket.on("client-join-game", viewport => {
-    if (socket.handshake.session.userID) {
-      db.getInstance()
-        .db("slither")
-        .collection("users")
-        .findOne({
-          _id: new mongodb.ObjectID(socket.handshake.session.userID)
-        })
-        .then(user => {
-          // Create new snake
-          const snake = game.spawnSnake(socket.id, user.username);
-          snake.viewport = viewport;
+  ws.on("message", function(data) {
+    const { type, payload } = JSON.parse(data);
 
-          // Inform the player about the current state of the game
-          socket.emit("server-start-game", game.getFullGameStateAsJSON());
+    switch (type) {
+      case "c-join-game": {
+        if (!req.session.userId) return;
 
-          // Finally let the player enter the game
-          socket.join("game");
-        });
+        viewport = payload;
+        db.getInstance()
+          .db("slither")
+          .collection("users")
+          .findOne({
+            _id: new mongodb.ObjectID(req.session.userId)
+          })
+          .then(user => {
+            // join game!
+            ws.join("game");
+
+            // Create new snake
+            const snake = game.spawnSnake(ws.id, user.username);
+            snake.viewport = viewport;
+
+            // Inform the player about the current state of the game
+            ws.send(
+              JSON.stringify(
+                {
+                  type: "s-start-game",
+                  payload: game.getGameState()
+                },
+                (key, value) => {
+                  if (key === "game") {
+                    // omit game reference from within snakes
+                    return undefined;
+                  } else if (key === "snake") {
+                    // omit snake reference from within snake segments
+                    return undefined;
+                  } else {
+                    return value;
+                  }
+                }
+              )
+            );
+          })
+          .catch(err => {
+            console.log("TCL: err", err);
+          });
+        break;
+      }
+
+      case "c-input": {
+        const { actions } = payload;
+        game.clientInput[ws.id] = [
+          ...(game.clientInput[ws.id] || []),
+          ...actions
+        ];
+        break;
+      }
     }
   });
 
-  /**
-   * Handle input messages from client.
-   */
-  socket.on("client-input", ({ actions }) => {
-    game.clientInput[socket.id] = [
-      ...(game.clientInput[socket.id] || []),
-      ...actions
-    ];
+  ws.on("error", function(error) {
+    console.log("TCL: error", error);
   });
 
-  /**
-   * Client is ready to leave the game.
-   */
-  socket.on("client-leave-game", () => {
-    socket.leave("game");
-    console.log(`player ${socket.id} has left the game`);
-  });
-
-  /**
-   * Automatically emitted when client disconnects.
-   */
-  socket.on("disconnect", () => {
-    console.log("disconnection: " + socket.id);
-    delete connections[socket.id];
-    game.removePlayer(socket.id);
-    game.io.emit("server-disconnect", socket.id);
+  ws.on("close", function(event) {
+    console.log(`Closed connection ${ws.id}`);
+    delete clients.default[ws.id];
+    game.removePlayer(ws.id);
+    ws.leave("game");
   });
 });

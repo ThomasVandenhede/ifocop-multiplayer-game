@@ -7,9 +7,9 @@ const mongodb = require("mongodb");
 const db = require("../db.js");
 
 class Game {
-  constructor(io) {
+  constructor(wss) {
     // Socket.io
-    this.io = io;
+    this.wss = wss;
 
     // Game world
     this.world = new Circle(0, 0, 2000);
@@ -60,12 +60,14 @@ class Game {
       name
     });
     this.snakes.push(newSnake);
-    this.io.emit(
-      "server-new-snake",
+    this.wss.to("game").send(
       JSON.stringify({
-        id: newSnake.id,
-        name: newSnake.name,
-        hue: newSnake.hue
+        type: "s-new-snake",
+        payload: {
+          id: newSnake.id,
+          name: newSnake.name,
+          hue: newSnake.hue
+        }
       })
     );
     return newSnake;
@@ -79,45 +81,19 @@ class Game {
     this.snakes = this.snakes.filter(snake => snake.id !== id);
   }
 
-  getFullGameStateAsJSON() {
-    const gameState = {
+  getGameState() {
+    return {
       world: this.world,
       snakes: this.snakes,
       pellets: this.pellets
     };
-
-    // Avoid circular references
-    return JSON.stringify(gameState, (key, value) => {
-      if (key === "game") {
-        // omit game reference from within snakes
-        return undefined;
-      } else if (key === "snake") {
-        // omit snake reference from within snake segments
-        return undefined;
-      } else {
-        return value;
-      }
-    });
   }
 
-  getGameStateAsJSON() {
-    const gameState = {
+  getGameUpdate() {
+    return {
       snakes: this.encodeSnakes(this.snakes),
       pellets: this.encodePellets(this.pellets)
     };
-
-    // Avoid circular references
-    return JSON.stringify(gameState, (key, value) => {
-      if (key === "game") {
-        // omit game reference from within snakes
-        return undefined;
-      } else if (key === "snake") {
-        // omit snake reference from within snake segments
-        return undefined;
-      } else {
-        return value;
-      }
-    });
   }
 
   encodeSnakes(snakes) {
@@ -157,7 +133,25 @@ class Game {
   }
 
   sendUpdate() {
-    this.io.to("game").emit("server-update", this.getGameStateAsJSON());
+    this.wss.to("game").send(
+      JSON.stringify(
+        {
+          type: "s-update",
+          payload: this.getGameUpdate()
+        },
+        (key, value) => {
+          if (key === "game") {
+            // omit game reference from within snakes
+            return undefined;
+          } else if (key === "snake") {
+            // omit snake reference from within snake segments
+            return undefined;
+          } else {
+            return value;
+          }
+        }
+      )
+    );
   }
 
   /**
@@ -195,17 +189,17 @@ class Game {
 
   handleGameOver(id) {
     console.log("game over");
-    const socket = this.io.sockets.connected[id];
+    const socket = this.wss.client(id);
 
-    if (socket && socket.handshake.session) {
-      const { userID } = socket.handshake.session;
+    if (socket && socket.session) {
+      const { userId } = socket.session;
       const dbClient = db.getInstance().db("slither");
       const usersCollection = dbClient.collection("users");
       const player = this.getSnakeById(socket.id);
 
       // update player's best score and max number of kills
       usersCollection
-        .findOne({ _id: new mongodb.ObjectID(userID) })
+        .findOne({ _id: new mongodb.ObjectID(userId) })
         .then(user => {
           if (user) {
             const payload = {
@@ -219,17 +213,17 @@ class Game {
 
             usersCollection.updateOne(
               {
-                _id: new mongodb.ObjectID(userID)
+                _id: new mongodb.ObjectID(userId)
               },
               payload
             );
           }
-          console.log("player score saved");
+          console.log("Player score saved!");
 
           // remove player
           this.removePlayer(socket.id);
 
-          socket.emit("server-game-over");
+          socket.send(JSON.stringify({ type: "s-game-over" }));
         });
     }
   }

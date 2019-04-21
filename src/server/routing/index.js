@@ -7,12 +7,12 @@ const db = require("../db.js");
 const saltRounds = 10;
 
 router.get("/", (req, res, next) => {
-  if (req.session.userID) {
+  if (req.session.userId) {
     const dbClient = db.getInstance().db("slither");
     const usersCollection = dbClient.collection("users");
 
     usersCollection
-      .findOne({ _id: new mongodb.ObjectID(req.session.userID) })
+      .findOne({ _id: new mongodb.ObjectID(req.session.userId) })
       .then(user => {
         res.render("index", { user });
       })
@@ -37,7 +37,7 @@ router.post("/login", (req, res, next) => {
       return bcrypt.compare(password, user.password).then(isMatch => {
         if (!isMatch) throw createError(403, "invalid password");
 
-        req.session.userID = user._id;
+        req.session.userId = user._id;
         res.send();
       });
     })
@@ -72,7 +72,7 @@ router.post("/signup", (req, res, next) => {
       })
     )
     .then(result => {
-      req.session.userID = result.insertedId;
+      req.session.userId = result.insertedId;
       res.status(200);
       res.send();
     })
@@ -85,7 +85,7 @@ router.get("/logout", (req, res) => {
 });
 
 router.get("/me", (req, res, next) => {
-  const id = req.session.userID;
+  const id = req.session.userId;
 
   if (!id) next(new createError.Forbidden());
 

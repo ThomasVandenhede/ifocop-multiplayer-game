@@ -1,7 +1,7 @@
 function Mouse({ element, callbackContext }) {
   // element
   this.element = element;
-  var callbackContext = callbackContext;
+  this.callbackContext = callbackContext;
 
   // mouse config
   this.naturalScrolling = true;
@@ -29,60 +29,72 @@ function Mouse({ element, callbackContext }) {
   this.mouseOverCallback = null;
   this.mouseOutCallback = null;
 
-  window.addEventListener("contextmenu", function(event) {
-    event.preventDefault ? event.preventDefault() : (event.returnValue = false);
-    if (typeof this.contextMenuCallback === "function") {
-      this.contextMenuCallback.call(callbackContext, event);
-    }
-  });
+  this.handleContextMenu = this.handleContextMenu.bind(this);
+  this.handleMouseDown = this.handleMouseDown.bind(this);
+  this.handleMouseUp = this.handleMouseUp.bind(this);
+  this.handleMouseMove = this.handleMouseMove.bind(this);
+  this.handleWheel = this.handleWheel.bind(this);
 
-  window.addEventListener(
-    "mousedown",
-    function(event) {
-      this.clickX = event.clientX + this.element.offsetLeft;
-      this.clickY = event.clientY + this.element.offsetTop;
-
-      this.buttons[event.button] = true;
-
-      typeof this.mouseDownCallback === "function" &&
-        this.mouseDownCallback.call(callbackContext, event);
-    }.bind(this)
-  );
-
-  window.addEventListener(
-    "mouseup",
-    function(event) {
-      this.releaseX = event.clientX + this.element.offsetLeft;
-      this.releaseY = event.clientY + this.element.offsetTop;
-      this.buttons[event.button] = false;
-
-      typeof this.mouseUpCallback === "function" &&
-        this.mouseUpCallback.call(callbackContext, event);
-    }.bind(this)
-  );
-
-  window.addEventListener(
-    "mousemove",
-    function(event) {
-      var scrollDirection = this.naturalScrolling ? 1 : -1;
-      this.x = event.clientX + this.element.offsetLeft;
-      this.y = event.clientY + this.element.offsetTop;
-
-      typeof this.mouseMoveCallback === "function" &&
-        this.mouseMoveCallback.call(callbackContext, event);
-    }.bind(this)
-  );
-
-  window.addEventListener(
-    "wheel",
-    function(event) {
-      var deltaY = event.deltaY;
-
-      typeof this.mouseWheelCallback === "function" &&
-        this.mouseWheelCallback.call(callbackContext, event);
-    }.bind(this)
-  );
+  this.addEventListeners();
 }
+
+Mouse.prototype.handleContextMenu = function(event) {
+  event.preventDefault ? event.preventDefault() : (event.returnValue = false);
+  if (typeof this.contextMenuCallback === "function") {
+    this.contextMenuCallback.call(this.callbackContext, event);
+  }
+};
+
+Mouse.prototype.handleMouseUp = function(event) {
+  this.releaseX = event.clientX + this.element.offsetLeft;
+  this.releaseY = event.clientY + this.element.offsetTop;
+  this.buttons[event.button] = false;
+
+  typeof this.mouseUpCallback === "function" &&
+    this.mouseUpCallback.call(this.callbackContext, event);
+};
+
+Mouse.prototype.handleMouseDown = function(event) {
+  this.clickX = event.clientX + this.element.offsetLeft;
+  this.clickY = event.clientY + this.element.offsetTop;
+
+  this.buttons[event.button] = true;
+
+  typeof this.mouseDownCallback === "function" &&
+    this.mouseDownCallback.call(this.callbackContext, event);
+};
+
+Mouse.prototype.handleMouseMove = function(event) {
+  var scrollDirection = this.naturalScrolling ? 1 : -1;
+  this.x = event.clientX + this.element.offsetLeft;
+  this.y = event.clientY + this.element.offsetTop;
+
+  typeof this.mouseMoveCallback === "function" &&
+    this.mouseMoveCallback.call(this.callbackContext, event);
+};
+
+Mouse.prototype.handleWheel = function(event) {
+  var deltaY = event.deltaY;
+
+  typeof this.mouseWheelCallback === "function" &&
+    this.mouseWheelCallback.call(this.callbackContext, event);
+};
+
+Mouse.prototype.addEventListeners = function() {
+  window.addEventListener("contextmenu", this.handleContextMenu);
+  window.addEventListener("mousedown", this.handleMouseDown);
+  window.addEventListener("mouseup", this.handleMouseUp);
+  window.addEventListener("mousemove", this.handleMouseMove);
+  window.addEventListener("wheel", this.handleWheel);
+};
+
+Mouse.prototype.removeEventListeners = function() {
+  window.removeEventListener("contextmenu", this.handleContextMenu);
+  window.removeEventListener("mousedown", this.handleMouseDown);
+  window.removeEventListener("mouseup", this.handleMouseUp);
+  window.removeEventListener("mousemove", this.handleMouseMove);
+  window.removeEventListener("wheel", this.handleWheel);
+};
 
 Mouse.prototype.on = function(el, type, callback) {
   // console.log("ON", el, type, callback);

@@ -63,7 +63,7 @@ export default class Renderer {
     // ctx.shadowBlur = 0; // default
     // ctx.shadowColor = "rgba(0, 0, 0, 0)"; // default
 
-    // display player name
+    // display player's name
     ctx.drawImage(
       nameImg,
       camera.applyToX(snake.x) - nameImg.width / 2,
@@ -121,6 +121,7 @@ export default class Renderer {
         this.renderPellet(pellet, this.preCtx, this.game.camera);
       }
     });
+
     this.game.snakes.forEach(snake =>
       this.renderSnake(snake, this.preCtx, this.game.camera)
     );

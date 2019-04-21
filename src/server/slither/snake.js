@@ -120,7 +120,6 @@ class Snake {
    * Convert body mass to pellets.
    */
   dropAllPellets() {
-    console.log("dropping pellets");
     for (let i = 0; i < this.segments.length - 1; i++) {
       const segment = this.segments[i];
       const x = segment.x;

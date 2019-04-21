@@ -2,9 +2,7 @@ import Camera from "./camera.js";
 import Keyboard from "./keyboard/Keyboard.js";
 import Mouse from "./Mouse.js";
 import Renderer from "./renderer.js";
-import { PI2 } from "./constants.js";
 import Grid from "./grid.js";
-import { updateUserInfo } from "./ajax.js";
 
 export default class Game {
   constructor(socket) {
@@ -66,144 +64,6 @@ export default class Game {
 
     // Player actions. a packet of actions to be sent to the websocket server.
     this.actions = [];
-
-    // Save some data about the new snakes that enter the game.
-    this.socket.on("server-new-snake", json => {
-      const { id, name, hue } = JSON.parse(json);
-
-      // create name text canvas
-      const nameCanvas = document.createElement("canvas");
-      const nctx = nameCanvas.getContext("2d");
-      const font = "18px arial";
-
-      nctx.font = font;
-      nameCanvas.width = nctx.measureText(name).width;
-      nameCanvas.height = 25;
-
-      nctx.fillStyle = "white";
-      nctx.textBaseline = "top";
-      nctx.font = font;
-      nctx.fillText(name, 0, 0);
-
-      // create snake spritesheet canvas
-      const bodyCanvas = document.createElement("canvas");
-      const bctx = bodyCanvas.getContext("2d");
-      const r = 32;
-      const count = 40;
-
-      bodyCanvas.height = 2 * r;
-      bodyCanvas.width = 2 * r * count;
-      for (let i = 0; i < count; i++) {
-        const x = r + i * 2 * r;
-        const y = r;
-        const t = Math.cos((PI2 * i * 2) / count);
-        const gradient = bctx.createRadialGradient(x, y, 0, x, y, r);
-        gradient.addColorStop(0, `hsl(${hue}, 100%, 40%)`);
-        gradient.addColorStop(
-          1,
-          `hsl(${hue}, 100%, ${utils.lerp(60, 69, t)}%)`
-        );
-        bctx.fillStyle = gradient;
-
-        bctx.beginPath();
-        bctx.arc(x, y, r, 0, PI2);
-        bctx.fill();
-      }
-
-      // save images
-      this.snakeImages[id] = {
-        color: `hsl(${hue}, 100%, 69%)`,
-        name: nameCanvas,
-        body: bodyCanvas
-      };
-    });
-
-    // connection refused due to another connection being already open on the same session
-    this.socket.on("server-unauthorized", () => {
-      const unauthorizedEl = document.getElementById("unauthorized-warning");
-      const userInfo = document.getElementById("user-info");
-      const playButton = document.getElementById("playButton");
-
-      userInfo.style.display = "none";
-      playButton.style.display = "none";
-      unauthorizedEl.style.display = "block";
-    });
-
-    // build game
-    this.socket.on("server-start-game", json => {
-      window.animatedBackground.stop();
-
-      const menuContainer = document.getElementById("menu-container");
-      const gameContainer = document.getElementById("game-container");
-      window.ontransitionend = () => {
-        menuContainer.style.display = "none";
-        window.ontransitionend = null;
-      };
-      menuContainer.classList.add("fade-out");
-
-      gameContainer.style.display = "block";
-
-      //
-      this.joinRequested = false;
-      this.inGame = true;
-
-      const gameState = JSON.parse(json);
-      const { snakes, pellets, world } = gameState;
-      // build game
-      this.world = world;
-
-      // build pellets
-      this.pellets = pellets;
-
-      // build snakes
-      this.snakes = snakes;
-      this.player = this.snakes.find(snake => snake.id === this.socket.id);
-
-      this.create();
-    });
-
-    this.socket.on("server-game-over", () => {
-      const menuContainer = document.getElementById("menu-container");
-
-      window.ontransitionend = () => {
-        const gameContainer = document.getElementById("game-container");
-        gameContainer.style.dislay = "none";
-
-        // stop game
-        this.stop();
-        // ask server to get unsubscribe us from game updates
-        this.socket.emit("client-leave-game");
-        // prevent calling this event listener again
-        window.ontransitionend = null;
-
-        this.transitionRunning = false;
-        this.inGame = false;
-
-        // defer joining game until after all transitions have finished.
-        if (this.joinRequested) {
-          this.join();
-        }
-      };
-
-      updateUserInfo();
-
-      // trigger transition
-      menuContainer.style.display = "block";
-      setTimeout(() => {
-        menuContainer.classList.remove("fade-out");
-        window.animatedBackground.start();
-        this.transitionRunning = true;
-      }, 10);
-    });
-
-    // Server has updated the game state:
-    // - new pellets
-    // - snake heads
-    // - potential collisions
-    this.socket.on("server-update", gameStateJSON => {
-      this.processServerUpdate(JSON.parse(gameStateJSON));
-      this.getPlayer() && this.processClientInput();
-    });
   }
 
   requestJoin() {
@@ -220,7 +80,7 @@ export default class Game {
   }
 
   join() {
-    this.socket.emit("client-join-game");
+    this.socket.send(JSON.stringify({ type: "c-join-game" }));
   }
 
   getPlayer() {
@@ -232,7 +92,6 @@ export default class Game {
    */
   processServerUpdate(gameState) {
     this.pellets = this.decodePellets(gameState.pellets);
-
     this.snakes = this.decodeSnakes(gameState.snakes);
     this.player = this.snakes.find(snake => snake.id === this.socket.id);
 
@@ -338,10 +197,15 @@ export default class Game {
       this.actions.length &&
       Date.now() - this.lastInputMessageTime >= this.inputMessageInterval
     ) {
-      this.socket.emit("client-input", {
-        // player: this.player,
-        actions: this.actions
-      });
+      this.socket.send(
+        JSON.stringify({
+          type: "c-input",
+          payload: {
+            // player: this.player,
+            actions: this.actions
+          }
+        })
+      );
       this.clearActions();
       this.lastInputMessageTime = Date.now();
     }
@@ -406,6 +270,10 @@ export default class Game {
   }
 
   stop() {
+    // remove event listeners
+    this.keyboard.removeEventListeners();
+    this.mouse.removeEventListeners();
+
     // stop render loop
     this.renderLoop && this.renderLoop.stop();
 

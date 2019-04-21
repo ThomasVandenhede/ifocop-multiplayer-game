@@ -10,7 +10,7 @@ function Keyboard(game) {
   this.keys = keyCodes.reduce(function(keys, keyCode) {
     return Object.assign(keys, { [keyCode]: new Key(keyCode) });
   }, {});
-  this.bindEventHandlers();
+  this.addEventListeners();
 }
 
 Keyboard.prototype.handleKeydown = function(event) {
@@ -54,12 +54,12 @@ Keyboard.prototype.handleKeyup = function(event) {
   key.onUp.call(this.game);
 };
 
-Keyboard.prototype.bindEventHandlers = function() {
+Keyboard.prototype.addEventListeners = function() {
   window.addEventListener("keydown", this.handleKeydown);
   window.addEventListener("keyup", this.handleKeyup);
 };
 
-Keyboard.prototype.unbindEventHandlers = function() {
+Keyboard.prototype.removeEventListeners = function() {
   window.removeEventListener("keydown", this.handleKeydown);
   window.removeEventListener("keyup", this.handleKeyup);
 };
