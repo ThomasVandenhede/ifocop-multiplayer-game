@@ -47,7 +47,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
       socket.onmessage = function(event) {
         const data = event.data;
-        const { type, payload } = JSON.parse(data);
+        const type = decode(data[0]);
+        const payload = data.length > 1 ? JSON.parse(data.substr(1)) : null;
 
         switch (type) {
           // Get socket id.
@@ -130,7 +131,13 @@ document.addEventListener("DOMContentLoaded", function() {
             break;
           }
 
-          //
+          // Information about the game world position and bounaries
+          case "s-game-world": {
+            game.world = payload;
+            break;
+          }
+
+          // Start the game
           case "s-start-game": {
             window.animatedBackground.stop();
 
@@ -144,22 +151,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
             gameContainer.style.display = "block";
 
-            //
             game.joinRequested = false;
             game.inGame = true;
-
-            const gameState = payload;
-            const { snakes, pellets, world } = gameState;
-
-            // build game
-            game.world = world;
-
-            // build pellets
-            game.pellets = pellets;
-
-            // build snakes
-            game.snakes = snakes;
-            game.player = game.snakes.find(snake => snake.id === socket.id);
 
             game.create();
             break;

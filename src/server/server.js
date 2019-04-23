@@ -9,6 +9,7 @@ const indexRoute = require("./routing/index.js");
 const createError = require("http-errors");
 const db = require("./db.js");
 const mongodb = require("mongodb");
+const { encode, decode } = require("../shared/msgTypes.js");
 
 /**
  * HTTP SERVER
@@ -204,7 +205,7 @@ wss.on("connection", function(ws, req) {
   // Attach a unique id to the current ws object
   ws.id = uuid.v4();
   clients.default[ws.id] = ws;
-  ws.send(JSON.stringify({ type: "s-socket-id", payload: ws.id }));
+  ws.send(encode("s-socket-id") + JSON.stringify(ws.id));
 
   // Add additional methods to the current ws object
   wss.attachMethods(ws);
@@ -212,13 +213,14 @@ wss.on("connection", function(ws, req) {
   console.log(`New connection ${ws.id}`);
 
   if (sessionAlreadyOpen(ws)) {
-    ws.send(JSON.stringify({ type: "s-unauthorized" }));
+    ws.send(encode("s-unauthorized"));
   } else {
-    ws.send(JSON.stringify({ type: "s-authorized" }));
+    ws.send(encode("s-authorized"));
   }
 
   ws.on("message", function(data) {
-    const { type, payload } = JSON.parse(data);
+    const type = decode(data[0]);
+    const payload = data.length > 1 && JSON.parse(data.substr(1));
 
     switch (type) {
       case "c-join-game": {
@@ -240,25 +242,8 @@ wss.on("connection", function(ws, req) {
             snake.viewport = viewport;
 
             // Inform the player about the current state of the game
-            ws.send(
-              JSON.stringify(
-                {
-                  type: "s-start-game",
-                  payload: game.getGameState()
-                },
-                (key, value) => {
-                  if (key === "game") {
-                    // omit game reference from within snakes
-                    return undefined;
-                  } else if (key === "snake") {
-                    // omit snake reference from within snake segments
-                    return undefined;
-                  } else {
-                    return value;
-                  }
-                }
-              )
-            );
+            ws.send(encode("s-game-world") + JSON.stringify(game.world));
+            ws.send(encode("s-start-game"));
           })
           .catch(err => {
             console.log("TCL: err", err);

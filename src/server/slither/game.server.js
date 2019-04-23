@@ -5,6 +5,7 @@ const Circle = require("./geometry/circle.js");
 const Pellet = require("./pellet.js");
 const mongodb = require("mongodb");
 const db = require("../db.js");
+const { encode } = require("../../shared/msgTypes.js");
 
 class Game {
   constructor(wss) {
@@ -13,7 +14,6 @@ class Game {
 
     // Game world
     this.world = new Circle(0, 0, 2000);
-    this.world.type = "World";
 
     // Game timer
     this.timer = new GameTimer();
@@ -61,14 +61,12 @@ class Game {
     });
     this.snakes.push(newSnake);
     this.wss.to("game").send(
-      JSON.stringify({
-        type: "s-new-snake",
-        payload: {
+      encode("s-new-snake") +
+        JSON.stringify({
           id: newSnake.id,
           name: newSnake.name,
           hue: newSnake.hue
-        }
-      })
+        })
     );
     return newSnake;
   }
@@ -134,12 +132,8 @@ class Game {
 
   sendUpdate() {
     this.wss.to("game").send(
-      JSON.stringify(
-        {
-          type: "s-update",
-          payload: this.getGameUpdate()
-        },
-        (key, value) => {
+      encode("s-update") +
+        JSON.stringify(this.getGameUpdate(), (key, value) => {
           if (key === "game") {
             // omit game reference from within snakes
             return undefined;
@@ -149,8 +143,7 @@ class Game {
           } else {
             return value;
           }
-        }
-      )
+        })
     );
   }
 
@@ -223,7 +216,7 @@ class Game {
           // remove player
           this.removePlayer(socket.id);
 
-          socket.send(JSON.stringify({ type: "s-game-over" }));
+          socket.send(encode("s-game-over"));
         });
     }
   }

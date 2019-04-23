@@ -80,7 +80,7 @@ export default class Game {
   }
 
   join() {
-    this.socket.send(JSON.stringify({ type: "c-join-game" }));
+    this.socket.send(encode("c-join-game"));
   }
 
   getPlayer() {
@@ -198,13 +198,10 @@ export default class Game {
       Date.now() - this.lastInputMessageTime >= this.inputMessageInterval
     ) {
       this.socket.send(
-        JSON.stringify({
-          type: "c-input",
-          payload: {
-            // player: this.player,
+        encode("c-input") +
+          JSON.stringify({
             actions: this.actions
-          }
-        })
+          })
       );
       this.clearActions();
       this.lastInputMessageTime = Date.now();
