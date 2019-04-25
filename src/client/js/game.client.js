@@ -33,9 +33,10 @@ export default class Game {
     this.keyboard = new Keyboard();
     this.mouse = new Mouse({ element: this.canvas, callbackContext: this });
     this.mouse.mouseMoveCallback = function() {
-      const mouseCenterOffsetX = this.mouse.x - this.canvas.width / 2;
-      const mouseCenterOffsetY = this.mouse.y - this.canvas.height / 2;
-      const dir = Math.atan2(mouseCenterOffsetY, mouseCenterOffsetX);
+      const canvasBoundingRect = this.canvas.getBoundingClientRect();
+      const mOffsetX = Math.floor(this.mouse.x - canvasBoundingRect.width / 2);
+      const mOffsetY = Math.floor(this.mouse.y - canvasBoundingRect.height / 2);
+      const dir = Math.atan2(mOffsetY, mOffsetX);
 
       this.actions.push({
         frameDuration: this.dt,

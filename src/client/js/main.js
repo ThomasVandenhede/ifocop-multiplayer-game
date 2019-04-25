@@ -6,16 +6,26 @@ document.addEventListener("DOMContentLoaded", function() {
   window.animatedBackground.start();
 
   function resize() {
-    const canvases = Array.from(
-      document.querySelectorAll("#game-container canvas")
-    );
-    canvases.forEach(canvas => {
-      const canvasWidth = window.innerWidth;
-      const canvasHeight = window.innerHeight;
-      // change resolution
-      canvas.setAttribute("width", canvasWidth);
-      canvas.setAttribute("height", canvasHeight);
-    });
+    const wWidth = Math.ceil(window.innerWidth);
+    const wHeight = Math.ceil(window.innerHeight);
+    const diagonal = Math.sqrt(wWidth * wWidth + wHeight * wHeight);
+    const aspectRatio = wWidth / wHeight;
+    let cWidth = Math.ceil((1800 * wWidth) / diagonal);
+    let cHeight = Math.ceil((1800 * wHeight) / diagonal);
+
+    if (cWidth > 1500) {
+      cWidth = 1500;
+      cHeight = 1500 / aspectRatio;
+    }
+    if (cHeight > 1500) {
+      cHeight = 1500;
+      cWidth = 1500 * aspectRatio;
+    }
+
+    const canvas = document.querySelector("#game-container canvas");
+    // change resolution
+    canvas.setAttribute("width", cWidth);
+    canvas.setAttribute("height", cHeight);
   }
 
   window.addEventListener("resize", resize);
