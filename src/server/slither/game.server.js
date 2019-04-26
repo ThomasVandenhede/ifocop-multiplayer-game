@@ -61,14 +61,6 @@ class Game {
       name
     });
     this.snakes.push(newSnake);
-    this.wss.to("game").send(
-      encode("s-new-snake") +
-        JSON.stringify({
-          id: newSnake.id,
-          name: newSnake.name,
-          hue: newSnake.hue
-        })
-    );
     return newSnake;
   }
 
@@ -138,7 +130,6 @@ class Game {
   sendUpdate() {
     // Send custom game state to each client (only what is visible)
     this.snakes.forEach(snake => {
-      console.log("TCL: Game -> sendUpdate -> snake.viewport", snake.viewport);
       const visibleGameState = {
         snakes: this.encodeSnakes(this.snakes),
         pellets: this.encodePellets(

@@ -223,6 +223,10 @@ wss.on("connection", function(ws, req) {
     const payload = data.length > 1 && JSON.parse(data.substr(1));
 
     switch (type) {
+      case "c-skin": {
+        break;
+      }
+
       case "c-join-game": {
         if (!req.session.userId) return;
 
@@ -241,11 +245,23 @@ wss.on("connection", function(ws, req) {
 
             // Inform the player about the current state of the game
             ws.send(encode("s-game-world") + JSON.stringify(game.world));
-            ws.send(encode("s-start-game"));
+            wss
+              .to("game")
+              .send(
+                encode("s-all-snakes-skins") +
+                  JSON.stringify(
+                    game.snakes.map(({ id, name, hue }) => ({ id, name, hue }))
+                  )
+              );
           })
           .catch(err => {
             console.log("TCL: err", err);
           });
+        break;
+      }
+
+      case "c-ready-to-go": {
+        ws.send(encode("s-start-game"));
         break;
       }
 

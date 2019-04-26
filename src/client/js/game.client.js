@@ -74,6 +74,52 @@ export default class Game {
     this.actions = [];
   }
 
+  createSnakeSkin(id, name, hue) {
+    // create name text canvas
+    const nameCanvas = document.createElement("canvas");
+    const nctx = nameCanvas.getContext("2d");
+    const font = "18px arial";
+
+    nctx.font = font;
+    nameCanvas.width = nctx.measureText(name).width;
+    nameCanvas.height = 25;
+
+    nctx.fillStyle = "white";
+    nctx.textBaseline = "top";
+    nctx.font = font;
+    nctx.fillText(name, 0, 0);
+
+    // create snake spritesheet canvas
+    const bodyCanvas = document.createElement("canvas");
+    const bctx = bodyCanvas.getContext("2d");
+    const r = 32;
+    const count = 40;
+
+    bodyCanvas.height = 2 * r;
+    bodyCanvas.width = 2 * r * count;
+    for (let i = 0; i < count; i++) {
+      const x = r + i * 2 * r;
+      const y = r;
+      const t = Math.cos((PI2 * i * 2) / count);
+      const l = utils.lerp(60, 69, t);
+      const gradient = bctx.createRadialGradient(x, y, 0, x, y, r);
+      gradient.addColorStop(0, `hsl(${hue}, 100%, 40%)`);
+      gradient.addColorStop(1, `hsl(${hue}, 100%, ${l}%)`);
+      bctx.fillStyle = gradient;
+
+      bctx.beginPath();
+      bctx.arc(x, y, r, 0, PI2);
+      bctx.fill();
+    }
+
+    // save images
+    this.snakeImages[id] = {
+      color: `hsl(${hue}, 100%, 69%)`,
+      name: nameCanvas,
+      body: bodyCanvas
+    };
+  }
+
   requestJoin() {
     this.joinRequested = false;
 
