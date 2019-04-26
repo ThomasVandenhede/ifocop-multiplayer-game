@@ -5,6 +5,7 @@ const Circle = require("./geometry/circle.js");
 const Pellet = require("./pellet.js");
 const mongodb = require("mongodb");
 const db = require("../db.js");
+const { WORLD_RADIUS } = require("../../shared/constants.js");
 const { encode } = require("../../shared/msgTypes.js");
 
 class Game {
@@ -13,7 +14,7 @@ class Game {
     this.wss = wss;
 
     // Game world
-    this.world = new Circle(0, 0, 2000);
+    this.world = new Circle(0, 0, WORLD_RADIUS);
 
     // Game timer
     this.timer = new GameTimer();
@@ -90,7 +91,11 @@ class Game {
   getGameUpdate() {
     return {
       snakes: this.encodeSnakes(this.snakes),
-      pellets: this.encodePellets(this.pellets)
+      pellets: this.encodePellets(
+        this.pellets.filter(pellet => {
+          pellet.getBoundingRect().overlaps;
+        })
+      )
     };
   }
 
@@ -131,20 +136,33 @@ class Game {
   }
 
   sendUpdate() {
-    this.wss.to("game").send(
-      encode("s-update") +
-        JSON.stringify(this.getGameUpdate(), (key, value) => {
-          if (key === "game") {
-            // omit game reference from within snakes
-            return undefined;
-          } else if (key === "snake") {
-            // omit snake reference from within snake segments
-            return undefined;
-          } else {
-            return value;
-          }
-        })
-    );
+    // Send custom game state to each client (only what is visible)
+    this.snakes.forEach(snake => {
+      console.log("TCL: Game -> sendUpdate -> snake.viewport", snake.viewport);
+      const visibleGameState = {
+        snakes: this.encodeSnakes(this.snakes),
+        pellets: this.encodePellets(
+          this.pellets.filter(pellet =>
+            pellet.getBoundingRect().overlaps(snake.viewport)
+          )
+        )
+      };
+
+      this.wss.client(snake.id).send(
+        encode("s-update") +
+          JSON.stringify(visibleGameState, (key, value) => {
+            if (key === "game") {
+              // omit game reference from within snakes
+              return undefined;
+            } else if (key === "snake") {
+              // omit snake reference from within snake segments
+              return undefined;
+            } else {
+              return value;
+            }
+          })
+      );
+    });
   }
 
   /**

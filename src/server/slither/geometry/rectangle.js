@@ -1,8 +1,8 @@
 var Vector = require("./vector");
 
 function Rectangle(props) {
-  this.x = props.x;
-  this.y = props.y;
+  this.x = props.x || 0;
+  this.y = props.y || 0;
   this.width = props.width !== undefined ? props.width : 0;
   this.height = props.height !== undefined ? props.height : 0;
 }

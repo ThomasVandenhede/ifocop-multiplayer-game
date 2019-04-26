@@ -1,5 +1,4 @@
 import Game from "./game.client.js";
-import { PI2 } from "./constants.js";
 import { updateUserInfo } from "./ajax.js";
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -13,13 +12,13 @@ document.addEventListener("DOMContentLoaded", function() {
     let cWidth = Math.ceil((1800 * wWidth) / diagonal);
     let cHeight = Math.ceil((1800 * wHeight) / diagonal);
 
-    if (cWidth > 1500) {
-      cWidth = 1500;
-      cHeight = 1500 / aspectRatio;
+    if (cWidth > MAX_CANVAS_SIZE) {
+      cWidth = MAX_CANVAS_SIZE;
+      cHeight = MAX_CANVAS_SIZE / aspectRatio;
     }
-    if (cHeight > 1500) {
-      cHeight = 1500;
-      cWidth = 1500 * aspectRatio;
+    if (cHeight > MAX_CANVAS_SIZE) {
+      cHeight = MAX_CANVAS_SIZE;
+      cWidth = MAX_CANVAS_SIZE * aspectRatio;
     }
 
     const canvas = document.querySelector("#game-container canvas");

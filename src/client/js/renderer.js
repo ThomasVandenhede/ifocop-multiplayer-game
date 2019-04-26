@@ -1,5 +1,4 @@
 import AABB from "./aabb.js";
-import { PI2 } from "./constants.js";
 
 export default class Renderer {
   constructor(game) {

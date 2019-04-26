@@ -226,7 +226,6 @@ wss.on("connection", function(ws, req) {
       case "c-join-game": {
         if (!req.session.userId) return;
 
-        viewport = payload;
         db.getInstance()
           .db("slither")
           .collection("users")
@@ -238,8 +237,7 @@ wss.on("connection", function(ws, req) {
             ws.join("game");
 
             // Create new snake
-            const snake = game.spawnSnake(ws.id, user.username);
-            snake.viewport = viewport;
+            game.spawnSnake(ws.id, user.username);
 
             // Inform the player about the current state of the game
             ws.send(encode("s-game-world") + JSON.stringify(game.world));

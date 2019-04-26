@@ -20,6 +20,13 @@ export default class Game {
     this.renderer = new Renderer(this);
     this.grid = new Grid(100);
 
+    // game world
+    this.world = {
+      x: 0,
+      y: 0,
+      r: WORLD_RADIUS
+    };
+
     // game objects
     this.pellets = [];
     this.snakes = [];

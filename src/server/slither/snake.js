@@ -1,7 +1,9 @@
 const Vector = require("./geometry/vector");
 const Circle = require("./geometry/circle");
+const Rectangle = require("./geometry/rectangle");
 const utils = require("../../shared/utils");
 const Pellet = require("./pellet");
+const { MAX_CANVAS_SIZE } = require("../../shared/constants");
 
 class Snake {
   constructor({ game, id, x, y, name }) {
@@ -10,7 +12,7 @@ class Snake {
     this.name = name || "";
 
     // the area that the client sees (camera position and dimensions)
-    this.viewport;
+    this.viewport = new Rectangle({});
 
     this.id = id;
     this.type = this.constructor.name;
@@ -168,6 +170,14 @@ class Snake {
 
     // update radius
     this.radius = this.INITIAL_RADIUS + (this.mass - this.INITIAL_MASS) * 0.05;
+
+    // update maximum snake viewport
+    const ratio = this.radius / this.INITIAL_RADIUS;
+    const maxDimension = MAX_CANVAS_SIZE / (1.15 * Math.pow(ratio, -0.3));
+    this.viewport.width = maxDimension;
+    this.viewport.height = maxDimension;
+    this.viewport.x = this.x - maxDimension / 2;
+    this.viewport.y = this.y - maxDimension / 2;
 
     // update length
     const length = Math.ceil((this.mass / this.radius) * 15);
